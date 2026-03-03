@@ -1,5 +1,5 @@
 # App Info
-APP_NAME = "POS System"
+APP_NAME = "Di pa alam"
 APP_VERSION = "1.0.0"
 
 # Window Size
