@@ -1,3 +1,7 @@
+# ============================================================
+# DASHBOARD WINDOW
+# ============================================================
+
 import customtkinter as ctk
 from settings import APP_NAME
 from controllers.dashboard_controller import (
@@ -43,8 +47,8 @@ class Dashboard(ctk.CTk):
             ("SELL",                         "#90EE90", "#000000", 50, on_sell_click),
             ("RECEIPTS",                     "#00BFFF", "#000000", 50, on_receipts_click),
             ("INVENTORY\nTRANSACTION ENTRY", "#FFD700", "#000000", 30, on_inventory_transaction_click),
-            ("USER",                         "#d3d3d3", "#000000", 50, on_user_click),
-            ("EXIT",                      "#FF4444", "#000000", 50, on_exit_click),
+            ("USER",                         "#d3d3d3", "#000000", 50, lambda: self.show_page("user")),
+            ("LOG OUT",                      "#FF4444", "#000000", 50, on_exit_click),
         ]
 
         for text, bg, fg, fsize, cmd in buttons:
