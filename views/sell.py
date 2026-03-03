@@ -19,7 +19,7 @@ class SellPage(ctk.CTkFrame):
 
         ctk.CTkLabel(
             header, text="SELL",
-            font=ctk.CTkFont(size=40, weight="bold"),
+            font=ctk.CTkFont(size=70, weight="bold"),
             text_color="#000000"
         ).place(relx=0.5, rely=0.5, anchor="center")
 
