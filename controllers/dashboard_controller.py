@@ -13,5 +13,4 @@ def on_inventory_transaction_click():
     print("INVENTORY TRANSACTION ENTRY button clicked")
 
 def on_exit_click():
-    print("EXIT button clicked")
     sys.exit()

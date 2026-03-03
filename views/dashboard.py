@@ -1,30 +1,17 @@
-# ============================================================
-# DASHBOARD WINDOW
-# ============================================================
-
 import customtkinter as ctk
-from settings import APP_NAME
+from controllers import controller
 from controllers.dashboard_controller import (
-    on_inventory_click,
-    on_sell_click,
-    on_receipts_click,
-    on_inventory_transaction_click,
-    on_exit_click
+    on_inventory_click, on_sell_click, on_receipts_click,
+    on_inventory_transaction_click, on_exit_click
 )
 
-class Dashboard(ctk.CTk):
-    def __init__(self):
-        super().__init__()
-        self.title(APP_NAME)
-        self.attributes("-fullscreen", True)
+class DashboardPage(ctk.CTkFrame):
+    def __init__(self, master):
+        super().__init__(master, fg_color="#ffffff", corner_radius=0)
 
-        ctk.set_appearance_mode("light")
-
-        # ── Header ──────────────────────────────────────────
         header = ctk.CTkFrame(self, fg_color="#000000", height=150, corner_radius=0)
         header.pack(fill="x", side="top")
         header.pack_propagate(False)
-
         ctk.CTkLabel(
             header,
             text="INVENTORY MANAGEMENT SYSTEM",
@@ -32,50 +19,26 @@ class Dashboard(ctk.CTk):
             text_color="white"
         ).pack(side="left", padx=20, pady=10)
 
-        # ── Body ─────────────────────────────────────────────
         body = ctk.CTkFrame(self, fg_color="#ffffff", corner_radius=0)
         body.pack(fill="both", expand=True)
 
-        # ── Sidebar ──────────────────────────────────────────
         sidebar = ctk.CTkFrame(body, fg_color="#ffffff", width=500, corner_radius=0)
         sidebar.pack(fill="y", side="left", padx=20, pady=20)
         sidebar.pack_propagate(False)
-
-        # ── Content Area ─────────────────────────────────────
-        self.content_area = ctk.CTkFrame(body, fg_color="#ffffff", corner_radius=0)
-        self.content_area.pack(fill="both", expand=True)
 
         buttons = [
             ("INVENTORY",                    "#ffffff", "#000000", 50, on_inventory_click),
             ("SELL",                         "#90EE90", "#000000", 50, on_sell_click),
             ("RECEIPTS",                     "#00BFFF", "#000000", 50, on_receipts_click),
             ("INVENTORY\nTRANSACTION ENTRY", "#FFD700", "#000000", 30, on_inventory_transaction_click),
-            ("USER",                         "#d3d3d3", "#000000", 50, lambda: self.show_page("user")),
+            ("USER",                         "#d3d3d3", "#000000", 50, lambda: controller.navigate("user")),
             ("EXIT",                         "#FF4444", "#000000", 50, on_exit_click),
         ]
 
         for text, bg, fg, fsize, cmd in buttons:
             ctk.CTkButton(
-                sidebar,
-                text=text,
-                fg_color=bg,
-                text_color=fg,
-                hover_color=bg,
-                border_color="#000000",
-                border_width=2,
+                sidebar, text=text, fg_color=bg, text_color=fg,
+                hover_color=bg, border_color="#000000", border_width=2,
                 font=ctk.CTkFont(size=fsize, weight="bold"),
-                corner_radius=0,
-                height=136,
-                command=cmd
+                corner_radius=0, height=136, command=cmd
             ).pack(fill="x", pady=6)
-
-    def show_page(self, page_name):
-        for widget in self.content_area.winfo_children():
-            widget.destroy()
-        if page_name == "user":
-            from views.user import UserPage
-            UserPage(self.content_area, self).pack(fill="both", expand=True)
-
-def open_window():
-    app = Dashboard()
-    app.mainloop()

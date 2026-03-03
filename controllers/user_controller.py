@@ -1,3 +1,2 @@
-def on_back_click(dashboard):
-    for widget in dashboard.content_area.winfo_children():
-        widget.destroy()
+def on_back_click(app):
+    app.show_page("dashboard")
