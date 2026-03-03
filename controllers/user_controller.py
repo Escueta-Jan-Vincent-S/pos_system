@@ -1,3 +1,3 @@
-def on_back_click(window, dashboard):
-    window.destroy()
-    dashboard.deiconify()  # show dashboard again
+def on_back_click(dashboard):
+    for widget in dashboard.content_area.winfo_children():
+        widget.destroy()

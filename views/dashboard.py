@@ -9,7 +9,6 @@ from controllers.dashboard_controller import (
     on_sell_click,
     on_receipts_click,
     on_inventory_transaction_click,
-    on_user_click,
     on_exit_click
 )
 
@@ -51,7 +50,7 @@ class Dashboard(ctk.CTk):
             ("SELL",                         "#90EE90", "#000000", 50, on_sell_click),
             ("RECEIPTS",                     "#00BFFF", "#000000", 50, on_receipts_click),
             ("INVENTORY\nTRANSACTION ENTRY", "#FFD700", "#000000", 30, on_inventory_transaction_click),
-            ("USER",                         "#d3d3d3", "#000000", 50, lambda: on_user_click(self)),
+            ("USER",                         "#d3d3d3", "#000000", 50, lambda: self.show_page("user")),
             ("EXIT",                         "#FF4444", "#000000", 50, on_exit_click),
         ]
 
