@@ -39,8 +39,8 @@ class InventoryPage(ctk.CTkFrame):
         table_frame = ctk.CTkFrame(body, fg_color="#000000", corner_radius=0)
         table_frame.pack(fill="both", expand=True)
 
-        columns = ["Barcode", "Item Name", "Category", "Unit\nCost",
-                   "Selling\nPrice", "Demand", "Current\nStock", "Classification"]
+        columns = ["Barcode", "Item Name", "Category", "Unit Cost",
+                   "Selling Price", "Demand", "Current Stock", "Classification"]
 
         header_row = ctk.CTkFrame(table_frame, fg_color="#000000", corner_radius=0)
         header_row.pack(fill="x")
@@ -49,7 +49,7 @@ class InventoryPage(ctk.CTkFrame):
             header_row.grid_columnconfigure(i, weight=1, uniform="col")
             ctk.CTkLabel(
                 header_row, text=col,
-                font=ctk.CTkFont(size=14, weight="bold"),
+                font=ctk.CTkFont(size=25, weight="bold"),
                 text_color="white", justify="center"
             ).grid(row=0, column=i, sticky="nsew", padx=1, pady=12)
 
@@ -81,8 +81,8 @@ class InventoryPage(ctk.CTkFrame):
             ctk.CTkButton(
                 left_btns, text=text, fg_color=bg, text_color=fg,
                 hover_color=bg, border_color="#000000", border_width=2,
-                font=ctk.CTkFont(size=16, weight="bold"),
-                corner_radius=0, width=200, height=60, command=cmd
+                font=ctk.CTkFont(size=30, weight="bold"),
+                corner_radius=0, width=400, height=60, command=cmd
             ).pack(side="left", padx=5)
 
         right_btns = ctk.CTkFrame(btn_frame, fg_color="#ffffff", corner_radius=0)
@@ -92,8 +92,8 @@ class InventoryPage(ctk.CTkFrame):
             right_btns, text="DAILY  ▼",
             fg_color="#d3d3d3", text_color="#000000",
             hover_color="#c0c0c0", border_color="#000000", border_width=2,
-            font=ctk.CTkFont(size=16, weight="bold"),
-            corner_radius=0, width=150, height=40,
+            font=ctk.CTkFont(size=25, weight="bold"),
+            corner_radius=0, width=250, height=35,
             command=lambda: print("DAILY clicked")
         ).pack(pady=2)
 
@@ -101,8 +101,8 @@ class InventoryPage(ctk.CTkFrame):
             right_btns, text="PRINT",
             fg_color="#FFD700", text_color="#000000",
             hover_color="#e6c200", border_color="#000000", border_width=2,
-            font=ctk.CTkFont(size=16, weight="bold"),
-            corner_radius=0, width=150, height=40,
+            font=ctk.CTkFont(size=25, weight="bold"),
+            corner_radius=0, width=250, height=35,
             command=lambda: print("PRINT clicked")
         ).pack(pady=2)
 
@@ -126,7 +126,7 @@ class InventoryPage(ctk.CTkFrame):
                 lbl = ctk.CTkLabel(
                     self.rows_frame,
                     text=str(val),
-                    font=ctk.CTkFont(size=12),
+                    font=ctk.CTkFont(size=18),
                     text_color="#000000",
                     justify="center",
                     fg_color=bg,
