@@ -69,7 +69,7 @@ class ReorderTablePage(ctk.CTkFrame):
             hover_color="#c0c0c0", border_color="#000000", border_width=2,
             font=ctk.CTkFont(size=30, weight="bold"),
             corner_radius=0, width=400, height=60,
-            command=lambda: print("GENERATE REORDER POINT clicked")
+            command=lambda: controller.navigate("reorder_computation")
         ).pack(side="left", padx=5)
 
     def load_items(self):

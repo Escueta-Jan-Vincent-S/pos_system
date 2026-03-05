@@ -25,6 +25,7 @@ class App(ctk.CTk):
         from views.receipts import ReceiptsPage
         from views.inventory_transaction import InventoryTransactionPage
         from views.reorder_table import ReorderTablePage
+        from views.reorder_computation import ReorderComputationPage
 
         self.dashboard_page = DashboardPage(self.container)
         self.user_page = UserPage(self.container)
@@ -33,6 +34,7 @@ class App(ctk.CTk):
         self.receipts_page = ReceiptsPage(self.container)
         self.inventory_transaction_page = InventoryTransactionPage(self.container)
         self.reorder_table_page = ReorderTablePage(self.container)
+        self.reorder_computation_page = ReorderComputationPage(self.container)
 
         self.dashboard_page.grid(row=0, column=0, sticky="nsew")
         self.user_page.grid(row=0, column=0, sticky="nsew")
@@ -41,6 +43,7 @@ class App(ctk.CTk):
         self.receipts_page.grid(row=0, column=0, sticky="nsew")
         self.inventory_transaction_page.grid(row=0, column=0, sticky="nsew")
         self.reorder_table_page.grid(row=0, column=0, sticky="nsew")
+        self.reorder_computation_page.grid(row=0, column=0, sticky="nsew")
 
         self.show_page("dashboard")
 
@@ -53,10 +56,10 @@ class App(ctk.CTk):
             "receipts": self.receipts_page,
             "inventory_transaction": self.inventory_transaction_page,
             "reorder_table": self.reorder_table_page,
+            "reorder_computation": self.reorder_computation_page,
         }
         if page_name in pages:
             pages[page_name].tkraise()
-            # Refresh data when navigating to these pages
             if hasattr(pages[page_name], 'load_items'):
                 pages[page_name].load_items()
 
