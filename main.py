@@ -23,7 +23,6 @@ class App(ctk.CTk):
         from views.inventory import InventoryPage
         from views.sell import SellPage
         from views.receipts import ReceiptsPage
-        from views.inventory_transaction import InventoryTransactionPage
         from views.reorder_table import ReorderTablePage
         from views.reorder_computation import ReorderComputationPage
         from views.receipt import ReceiptPage
@@ -33,7 +32,6 @@ class App(ctk.CTk):
         self.inventory_page = InventoryPage(self.container)
         self.sell_page = SellPage(self.container)
         self.receipts_page = ReceiptsPage(self.container)
-        self.inventory_transaction_page = InventoryTransactionPage(self.container)
         self.reorder_table_page = ReorderTablePage(self.container)
         self.reorder_computation_page = ReorderComputationPage(self.container)
         self.receipt_page = ReceiptPage(self.container)
@@ -43,7 +41,6 @@ class App(ctk.CTk):
         self.inventory_page.grid(row=0, column=0, sticky="nsew")
         self.sell_page.grid(row=0, column=0, sticky="nsew")
         self.receipts_page.grid(row=0, column=0, sticky="nsew")
-        self.inventory_transaction_page.grid(row=0, column=0, sticky="nsew")
         self.reorder_table_page.grid(row=0, column=0, sticky="nsew")
         self.reorder_computation_page.grid(row=0, column=0, sticky="nsew")
         self.receipt_page.grid(row=0, column=0, sticky="nsew")
@@ -57,7 +54,6 @@ class App(ctk.CTk):
             "inventory": self.inventory_page,
             "sell": self.sell_page,
             "receipts": self.receipts_page,
-            "inventory_transaction": self.inventory_transaction_page,
             "reorder_table": self.reorder_table_page,
             "reorder_computation": self.reorder_computation_page,
             "receipt": self.receipt_page,
