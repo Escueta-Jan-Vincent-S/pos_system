@@ -21,7 +21,7 @@ class UserPage(ctk.CTkFrame):
 
         ctk.CTkLabel(
             header, text="USER",
-            font=ctk.CTkFont(size=40, weight="bold"),
+            font=ctk.CTkFont(size=60, weight="bold"),
             text_color="white"
         ).place(relx=0.5, rely=0.5, anchor="center")
 

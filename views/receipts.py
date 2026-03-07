@@ -25,7 +25,7 @@ class ReceiptsPage(ctk.CTkFrame):
 
         ctk.CTkLabel(
             header, text="LIST OF RECORD OF RECEIPTS",
-            font=ctk.CTkFont(size=32, weight="bold"),
+            font=ctk.CTkFont(size=60, weight="bold"),
             text_color="#000000"
         ).place(relx=0.5, rely=0.5, anchor="center")
 
