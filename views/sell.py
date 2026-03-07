@@ -30,6 +30,12 @@ class SellPage(ctk.CTkFrame):
             text_color="#000000"
         ).place(relx=0.5, rely=0.5, anchor="center")
 
+        ctk.CTkLabel(
+            header, text="🛒 LANZ & LINDLY\nMINIMART",
+            font=ctk.CTkFont(size=13, weight="bold"),
+            text_color="#000000", justify="right"
+        ).pack(side="right", padx=20)
+
         ctk.CTkFrame(self, fg_color="#000000", height=2, corner_radius=0).pack(fill="x")
 
         # Body
@@ -42,22 +48,23 @@ class SellPage(ctk.CTkFrame):
         left.pack(side="left", fill="both", expand=True, padx=(20, 10), pady=20)
 
         # Mode label + barcode entry
-        top_bar = ctk.CTkFrame(left, fg_color="#f0f0f0", corner_radius=0, height=50)
+        top_bar = ctk.CTkFrame(left, fg_color="#e8e8e8", corner_radius=0, height=55)
         top_bar.pack(fill="x")
         top_bar.pack_propagate(False)
 
         self.mode_label = ctk.CTkLabel(
-            top_bar, text="MODE: MANUAL",
-            font=ctk.CTkFont(size=13, weight="bold"),
-            text_color="#666666"
+            top_bar, text="⌨ MANUAL",
+            font=ctk.CTkFont(size=14, weight="bold"),
+            text_color="#ffffff", fg_color="#888888",
+            corner_radius=6, width=110
         )
-        self.mode_label.pack(side="left", padx=12)
+        self.mode_label.pack(side="left", padx=10, pady=10)
 
         self.barcode_entry = ctk.CTkEntry(
-            top_bar, placeholder_text="Scan or type barcode...",
-            width=230, height=35, font=ctk.CTkFont(size=14)
+            top_bar, placeholder_text="Type barcode or REC##### here...",
+            height=38, font=ctk.CTkFont(size=14)
         )
-        self.barcode_entry.pack(side="left", padx=(10, 5), pady=7)
+        self.barcode_entry.pack(side="left", padx=(5, 5), pady=8, fill="x", expand=True)
         self.barcode_entry.bind("<Return>", lambda e: self._on_add_barcode())
 
         ctk.CTkButton(
@@ -65,9 +72,9 @@ class SellPage(ctk.CTkFrame):
             fg_color="#90EE90", text_color="#000000",
             hover_color="#7dd67d", border_color="#000000", border_width=1,
             font=ctk.CTkFont(size=13, weight="bold"),
-            corner_radius=0, width=55, height=35,
+            corner_radius=0, width=60, height=38,
             command=self._on_add_barcode
-        ).pack(side="left")
+        ).pack(side="left", padx=(0, 10))
 
         ctk.CTkFrame(left, fg_color="#000000", height=1, corner_radius=0).pack(fill="x")
 
@@ -78,9 +85,10 @@ class SellPage(ctk.CTkFrame):
         col_header.grid_columnconfigure(0, weight=3)
         col_header.grid_columnconfigure(1, weight=1)
         col_header.grid_columnconfigure(2, weight=1)
-        col_header.grid_columnconfigure(3, weight=0)
+        col_header.grid_columnconfigure(3, weight=1)
+        col_header.grid_columnconfigure(4, weight=0)
 
-        for i, txt in enumerate(["DESCRIPTION", "QTY", "AMOUNT", ""]):
+        for i, txt in enumerate(["DESCRIPTION", "UNIT PRICE", "QTY", "AMOUNT", ""]):
             ctk.CTkLabel(col_header, text=txt,
                 font=ctk.CTkFont(size=13, weight="bold"),
                 text_color="#ffffff"
@@ -93,7 +101,8 @@ class SellPage(ctk.CTkFrame):
         self.cart_frame.grid_columnconfigure(0, weight=3)
         self.cart_frame.grid_columnconfigure(1, weight=1)
         self.cart_frame.grid_columnconfigure(2, weight=1)
-        self.cart_frame.grid_columnconfigure(3, weight=0)
+        self.cart_frame.grid_columnconfigure(3, weight=1)
+        self.cart_frame.grid_columnconfigure(4, weight=0)
 
         # Total bar
         ctk.CTkFrame(left, fg_color="#000000", height=2, corner_radius=0).pack(fill="x")
@@ -161,56 +170,62 @@ class SellPage(ctk.CTkFrame):
         pad = ctk.CTkFrame(right, fg_color="#f5f5f5", corner_radius=0)
         pad.pack(fill="both", expand=True)
 
+        for r in range(4):
+            pad.grid_rowconfigure(r, weight=1)
+        for c in range(4):
+            pad.grid_columnconfigure(c, weight=1)
+
         g = dict(fg_color="#90EE90", text_color="#000000", hover_color="#7dd67d",
                  border_color="#888888", border_width=1,
                  font=ctk.CTkFont(size=28, weight="bold"),
                  corner_radius=8, width=95, height=78)
 
         # Row 0
-        ctk.CTkButton(pad, text="1", **g, command=lambda: self._num("1")).grid(row=0, column=0, padx=4, pady=4)
-        ctk.CTkButton(pad, text="2", **g, command=lambda: self._num("2")).grid(row=0, column=1, padx=4, pady=4)
-        ctk.CTkButton(pad, text="3", **g, command=lambda: self._num("3")).grid(row=0, column=2, padx=4, pady=4)
+        ctk.CTkButton(pad, text="1", **g, command=lambda: self._num("1")).grid(row=0, column=0, padx=4, pady=4, sticky="nsew")
+        ctk.CTkButton(pad, text="2", **g, command=lambda: self._num("2")).grid(row=0, column=1, padx=4, pady=4, sticky="nsew")
+        ctk.CTkButton(pad, text="3", **g, command=lambda: self._num("3")).grid(row=0, column=2, padx=4, pady=4, sticky="nsew")
         ctk.CTkButton(pad, text="ENTER",
             fg_color="#90EE90", text_color="#000000", hover_color="#7dd67d",
             border_color="#888888", border_width=1,
             font=ctk.CTkFont(size=20, weight="bold"),
             corner_radius=8, width=95, height=78,
             command=self._refresh_displays
-        ).grid(row=0, column=3, padx=4, pady=4)
+        ).grid(row=0, column=3, padx=4, pady=4, sticky="nsew")
 
         # Row 1
-        ctk.CTkButton(pad, text="4", **g, command=lambda: self._num("4")).grid(row=1, column=0, padx=4, pady=4)
-        ctk.CTkButton(pad, text="5", **g, command=lambda: self._num("5")).grid(row=1, column=1, padx=4, pady=4)
-        ctk.CTkButton(pad, text="6", **g, command=lambda: self._num("6")).grid(row=1, column=2, padx=4, pady=4)
+        ctk.CTkButton(pad, text="4", **g, command=lambda: self._num("4")).grid(row=1, column=0, padx=4, pady=4, sticky="nsew")
+        ctk.CTkButton(pad, text="5", **g, command=lambda: self._num("5")).grid(row=1, column=1, padx=4, pady=4, sticky="nsew")
+        ctk.CTkButton(pad, text="6", **g, command=lambda: self._num("6")).grid(row=1, column=2, padx=4, pady=4, sticky="nsew")
         ctk.CTkButton(pad, text="PAY",
             fg_color="#228B22", text_color="#ffffff", hover_color="#1a6b1a",
             border_color="#888888", border_width=1,
             font=ctk.CTkFont(size=24, weight="bold"),
             corner_radius=8, width=95, height=78,
             command=self._on_pay
-        ).grid(row=1, column=3, padx=4, pady=4)
+        ).grid(row=1, column=3, padx=4, pady=4, sticky="nsew")
 
         # Row 2
-        ctk.CTkButton(pad, text="7", **g, command=lambda: self._num("7")).grid(row=2, column=0, padx=4, pady=4)
-        ctk.CTkButton(pad, text="8", **g, command=lambda: self._num("8")).grid(row=2, column=1, padx=4, pady=4)
-        ctk.CTkButton(pad, text="9", **g, command=lambda: self._num("9")).grid(row=2, column=2, padx=4, pady=4)
+        ctk.CTkButton(pad, text="7", **g, command=lambda: self._num("7")).grid(row=2, column=0, padx=4, pady=4, sticky="nsew")
+        ctk.CTkButton(pad, text="8", **g, command=lambda: self._num("8")).grid(row=2, column=1, padx=4, pady=4, sticky="nsew")
+        ctk.CTkButton(pad, text="9", **g, command=lambda: self._num("9")).grid(row=2, column=2, padx=4, pady=4, sticky="nsew")
 
         # Row 3
-        ctk.CTkButton(pad, text="0", **g, command=lambda: self._num("0")).grid(row=3, column=0, padx=4, pady=4)
+        ctk.CTkButton(pad, text="0", **g, command=lambda: self._num("0")).grid(row=3, column=0, padx=4, pady=4, sticky="nsew")
+        ctk.CTkButton(pad, text="00", **g, command=lambda: self._num("00")).grid(row=3, column=1, padx=4, pady=4, sticky="nsew")
         ctk.CTkButton(pad, text="←",
             fg_color="#90EE90", text_color="#000000", hover_color="#7dd67d",
             border_color="#888888", border_width=1,
             font=ctk.CTkFont(size=26, weight="bold"),
             corner_radius=8, width=95, height=78,
             command=self._backspace
-        ).grid(row=3, column=2, padx=4, pady=4)
+        ).grid(row=3, column=2, padx=4, pady=4, sticky="nsew")
         ctk.CTkButton(pad, text="DELETE",
             fg_color="#FF4444", text_color="#ffffff", hover_color="#cc0000",
             border_color="#888888", border_width=1,
             font=ctk.CTkFont(size=18, weight="bold"),
             corner_radius=8, width=95, height=78,
             command=self._clear_cash
-        ).grid(row=3, column=3, padx=4, pady=4)
+        ).grid(row=3, column=3, padx=4, pady=4, sticky="nsew")
 
     # ── Cart rendering ────────────────────────────────────────
     def _refresh_cart(self):
@@ -221,50 +236,56 @@ class SellPage(ctk.CTkFrame):
             amount = item["selling_price"] * item["quantity"]
             bg = "#f9f9f9" if i % 2 == 0 else "#ffffff"
 
-            row = ctk.CTkFrame(self.cart_frame, fg_color=bg, corner_radius=0, height=52)
+            row = ctk.CTkFrame(self.cart_frame, fg_color=bg, corner_radius=0, height=46)
             row.pack(fill="x", pady=1)
             row.pack_propagate(False)
 
-            # Description
+            # Description (0% - 42%)
             ctk.CTkLabel(row, text=item["item_name"],
                 font=ctk.CTkFont(size=15), text_color="#000000",
-                anchor="w"
-            ).place(relx=0.02, rely=0.5, anchor="w")
+                anchor="w", fg_color=bg
+            ).place(relx=0.01, rely=0.5, anchor="w", relwidth=0.41)
 
-            # Amount
-            ctk.CTkLabel(row, text=f"₱{amount:.2f}",
-                font=ctk.CTkFont(size=15, weight="bold"), text_color="#000000",
-                anchor="e"
-            ).place(relx=0.55, rely=0.5, anchor="e")
+            # Unit Price (42% - 58%)
+            ctk.CTkLabel(row, text=f"₱{item['selling_price']:.2f}",
+                font=ctk.CTkFont(size=14), text_color="#555555",
+                anchor="center", fg_color=bg
+            ).place(relx=0.50, rely=0.5, anchor="center", relwidth=0.16)
 
-            # +/- buttons
-            btn_frame = ctk.CTkFrame(row, fg_color="transparent")
-            btn_frame.place(relx=0.68, rely=0.5, anchor="center")
+            # +/- QTY (58% - 76%)
+            btn_frame = ctk.CTkFrame(row, fg_color=bg, corner_radius=0)
+            btn_frame.place(relx=0.67, rely=0.5, anchor="center")
 
             ctk.CTkButton(btn_frame, text="-",
                 fg_color="#d3d3d3", text_color="#000000", hover_color="#c0c0c0",
-                font=ctk.CTkFont(size=16, weight="bold"),
-                corner_radius=4, width=30, height=30,
+                font=ctk.CTkFont(size=14, weight="bold"),
+                corner_radius=4, width=28, height=28,
                 command=lambda b=item["barcode"]: self._on_decrement(b)
-            ).pack(side="left")
+            ).pack(side="left", padx=1)
 
             ctk.CTkLabel(btn_frame, text=str(item["quantity"]),
-                font=ctk.CTkFont(size=15, weight="bold"),
-                text_color="#000000", width=30
+                font=ctk.CTkFont(size=14, weight="bold"),
+                text_color="#000000", width=28
             ).pack(side="left")
 
             ctk.CTkButton(btn_frame, text="+",
                 fg_color="#d3d3d3", text_color="#000000", hover_color="#c0c0c0",
-                font=ctk.CTkFont(size=16, weight="bold"),
-                corner_radius=4, width=30, height=30,
+                font=ctk.CTkFont(size=14, weight="bold"),
+                corner_radius=4, width=28, height=28,
                 command=lambda b=item["barcode"]: self._on_increment(b)
-            ).pack(side="left")
+            ).pack(side="left", padx=1)
 
-            # Remove
+            # Amount (76% - 93%)
+            ctk.CTkLabel(row, text=f"₱{amount:.2f}",
+                font=ctk.CTkFont(size=15, weight="bold"), text_color="#000000",
+                anchor="e", fg_color=bg
+            ).place(relx=0.84, rely=0.5, anchor="center", relwidth=0.16)
+
+            # Remove button
             ctk.CTkButton(row, text="✕",
-                fg_color="transparent", text_color="#FF4444", hover_color="#ffe0e0",
-                font=ctk.CTkFont(size=16, weight="bold"),
-                corner_radius=4, width=35, height=35,
+                fg_color=bg, text_color="#FF4444", hover_color="#ffe0e0",
+                font=ctk.CTkFont(size=14, weight="bold"),
+                corner_radius=4, width=32, height=32,
                 command=lambda b=item["barcode"]: self._on_remove(b)
             ).place(relx=0.97, rely=0.5, anchor="e")
 
@@ -355,7 +376,7 @@ class SellPage(ctk.CTkFrame):
 
         def go_receipt():
             popup.destroy()
-            c._app.receipt_page.load_receipt(cart, receipt_no=receipt_no)
+            c._app.receipt_page.load_receipt(cart)
             controller.navigate("receipt")
 
         def new_sale():
@@ -401,7 +422,7 @@ class SellPage(ctk.CTkFrame):
 
         def choose_manual():
             self.ctrl.mode = "manual"
-            self.mode_label.configure(text="MODE: MANUAL  ⌨")
+            self.mode_label.configure(text="⌨ MANUAL", fg_color="#888888")
             self.barcode_entry.configure(state="normal")
             popup.destroy()
 
@@ -429,7 +450,7 @@ class SellPage(ctk.CTkFrame):
         found = self._detect_scanner()
         if found:
             self.ctrl.mode = "scan"
-            self.mode_label.configure(text="MODE: SCAN  📷")
+            self.mode_label.configure(text="📷 SCAN", fg_color="#228B22")
             self.barcode_entry.configure(state="normal")
             self.barcode_entry.focus_set()
             self._info("Scanner detected!\nReady to scan barcodes.")
@@ -472,7 +493,7 @@ class SellPage(ctk.CTkFrame):
 
         def use_manual():
             self.ctrl.mode = "manual"
-            self.mode_label.configure(text="MODE: MANUAL  ⌨")
+            self.mode_label.configure(text="⌨ MANUAL", fg_color="#888888")
             popup.destroy()
 
         ctk.CTkButton(btn_row, text="🔄  RETRY",

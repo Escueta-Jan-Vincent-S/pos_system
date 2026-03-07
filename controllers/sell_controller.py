@@ -121,7 +121,10 @@ class SellController:
     # ── Numpad ────────────────────────────────────────────────
     def numpad_press(self, digit):
         if len(self.cash_input) < 10:
-            self.cash_input += digit
+            if digit == "00":
+                self.cash_input += "00" if self.cash_input else ""
+            else:
+                self.cash_input += digit
 
     def numpad_backspace(self):
         self.cash_input = self.cash_input[:-1]
