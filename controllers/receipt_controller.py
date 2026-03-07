@@ -38,7 +38,9 @@ def print_pdf(cart, receipt_no):
         from reportlab.lib import colors
         from PIL import Image
 
-        filename = os.path.join(get_base_path(), f"receipt_{receipt_no}.pdf")
+        receipts_dir = os.path.join(get_base_path(), "receipts")
+        os.makedirs(receipts_dir, exist_ok=True)
+        filename = os.path.join(receipts_dir, f"receipt_{receipt_no}.pdf")
         now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
         c = canvas.Canvas(filename, pagesize=A6)
