@@ -23,13 +23,6 @@ class DashboardPage(ctk.CTkFrame):
             text_color="#ffffff"
         ).pack(side="left", padx=20, pady=10)
 
-        ctk.CTkLabel(
-            header,
-            text="🛒 LANZ & LINDLY MINIMART",
-            font=ctk.CTkFont(size=14, weight="bold"),
-            text_color="#ffffff"
-        ).pack(side="right", padx=20)
-
         # ── Body ──────────────────────────────────────────────
         body = ctk.CTkFrame(self, fg_color="#ffffff", corner_radius=0)
         body.pack(fill="both", expand=True, padx=15, pady=(5, 15))

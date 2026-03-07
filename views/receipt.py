@@ -114,7 +114,7 @@ class ReceiptPage(ctk.CTkFrame):
         banner = ctk.CTkFrame(self.card, fg_color="#000000", corner_radius=0, height=36)
         banner.pack(fill="x", padx=10, pady=(8, 0))
         banner.pack_propagate(False)
-        ctk.CTkLabel(banner, text="★  LANZ & LINDLY MINIMART  ★",
+        ctk.CTkLabel(banner, text="★  MINIMART  ★",
             font=ctk.CTkFont(size=13, weight="bold"),
             text_color="#ffffff").place(relx=0.5, rely=0.5, anchor="center")
 
