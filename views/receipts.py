@@ -23,6 +23,22 @@ class ReceiptsPage(ctk.CTkFrame):
             command=lambda: controller.navigate("dashboard")
         ).pack(side="left", padx=10)
 
+        # Search bar
+        self.search_var = ctk.StringVar()
+        self.search_var.trace_add("write", lambda *a: self._on_search())
+        search_frame = ctk.CTkFrame(header, fg_color="transparent")
+        search_frame.pack(side="left", padx=(0, 20))
+        ctk.CTkLabel(search_frame, text="🔍",
+            font=ctk.CTkFont(size=20),
+            text_color="#000000"
+        ).pack(side="left", padx=(0, 5))
+        ctk.CTkEntry(search_frame,
+            textvariable=self.search_var,
+            placeholder_text="Search receipt no / date...",
+            font=ctk.CTkFont(size=14),
+            width=220, height=40
+        ).pack(side="left")
+
         ctk.CTkLabel(
             header, text="LIST OF RECORD OF RECEIPTS",
             font=ctk.CTkFont(size=60, weight="bold"),
@@ -110,13 +126,20 @@ class ReceiptsPage(ctk.CTkFrame):
         self.ctrl.selected_receipt_no = None
         self.selected_label.configure(text="")
         self.status_label.configure(text="Select a receipt to print.")
+        self.search_var.set("")
         self._render_rows()
 
-    def _render_rows(self):
+    def _on_search(self):
+        self._render_rows(query=self.search_var.get().strip().lower())
+
+    def _render_rows(self, query=""):
         for w in self.rows_frame.winfo_children():
             w.destroy()
 
         records = self.ctrl.load_all()
+
+        if query:
+            records = [r for r in records if query in r[2].lower()]
 
         if not records:
             ctk.CTkLabel(self.rows_frame,
