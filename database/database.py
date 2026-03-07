@@ -271,15 +271,22 @@ def get_receipt_by_no(receipt_no):
     return [{"barcode": r[0], "item_name": r[1], "selling_price": r[2], "quantity": r[3]} for r in rows]
 
 def update_all_classifications():
-    """Compute ABC classification for all items based on weekly demand."""
+    """
+    Compute ABC classification ONLY for items that have been computed
+    (weekly_demand > 0). Items not yet computed are left untouched.
+    """
     conn = get_connection()
     cursor = conn.cursor()
-    cursor.execute("SELECT barcode, weekly_demand FROM items ORDER BY weekly_demand DESC")
+    cursor.execute("""
+        SELECT barcode, weekly_demand FROM items
+        WHERE weekly_demand > 0
+        ORDER BY weekly_demand DESC
+    """)
     items = cursor.fetchall()
-    conn.close()
 
     total = len(items)
     if total == 0:
+        conn.close()
         return
 
     for idx, (barcode, demand) in enumerate(items):
@@ -290,9 +297,9 @@ def update_all_classifications():
             cls = "B"
         else:
             cls = "C"
-
-        conn = get_connection()
-        cursor = conn.cursor()
         cursor.execute("UPDATE items SET classification=? WHERE barcode=?", (cls, barcode))
-        conn.commit()
-        conn.close()
+
+    # Clear classification for items not yet computed
+    cursor.execute("UPDATE items SET classification='' WHERE weekly_demand = 0")
+    conn.commit()
+    conn.close()

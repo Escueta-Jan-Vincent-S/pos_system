@@ -198,13 +198,29 @@ class ReorderComputationPage(ctk.CTkFrame):
             else:
                 status = "OK"
 
-            # Save to DB
+            # Save reorder info for this item only
             update_reorder_info(barcode, safety_stock, rop, min_level, max_level, status, avg_demand)
 
-            # Recompute ABC classification for all items
+            # Recompute ABC classification only among computed items
             update_all_classifications()
 
-            controller.navigate("reorder_table")
+            # Show success popup then navigate
+            popup = ctk.CTkToplevel(self)
+            popup.title("Applied")
+            popup.geometry("350x150")
+            popup.resizable(False, False)
+            popup.grab_set()
+            popup.lift()
+            ctk.CTkLabel(popup,
+                text=f"✅ Applied to {item[2]}!\nStatus: {status}",
+                font=ctk.CTkFont(size=15, weight="bold"),
+                justify="center", text_color="#000000"
+            ).pack(expand=True)
+            ctk.CTkButton(popup, text="OK",
+                command=lambda: [popup.destroy(), controller.navigate("reorder_table")],
+                fg_color="#90EE90", text_color="#000000",
+                corner_radius=0, width=100
+            ).pack(pady=10)
 
         except ValueError:
             popup = ctk.CTkToplevel(self)
