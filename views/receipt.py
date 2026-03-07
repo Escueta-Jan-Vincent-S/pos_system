@@ -41,7 +41,7 @@ class ReceiptPage(ctk.CTkFrame):
         card_border = ctk.CTkFrame(
             body, fg_color="#ffffff", corner_radius=0,
             border_color="#000000", border_width=2,
-            width=486, height=606
+            width=566, height=756
         )
         card_border.place(relx=0.4, rely=0.5, anchor="center")
         card_border.pack_propagate(False)
@@ -49,7 +49,7 @@ class ReceiptPage(ctk.CTkFrame):
         self.card = ctk.CTkScrollableFrame(
             card_border, fg_color="#ffffff", corner_radius=0,
             border_width=0,
-            width=480, height=600
+            width=560, height=750
         )
         self.card.pack(fill="both", expand=True)
 
