@@ -30,12 +30,6 @@ class SellPage(ctk.CTkFrame):
             text_color="#000000"
         ).place(relx=0.5, rely=0.5, anchor="center")
 
-        ctk.CTkLabel(
-            header, text="🛒 LANZ & LINDLY\nMINIMART",
-            font=ctk.CTkFont(size=13, weight="bold"),
-            text_color="#000000", justify="right"
-        ).pack(side="right", padx=20)
-
         ctk.CTkFrame(self, fg_color="#000000", height=2, corner_radius=0).pack(fill="x")
 
         # Body
