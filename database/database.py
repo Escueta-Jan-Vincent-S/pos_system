@@ -68,9 +68,16 @@ def initialize_db():
             time TEXT NOT NULL,
             total REAL DEFAULT 0,
             cash REAL DEFAULT 0,
-            change_amount REAL DEFAULT 0
+            change_amount REAL DEFAULT 0,
+            is_paid INTEGER DEFAULT 1
         )
     """)
+
+    # Migrate existing receipts table if is_paid column missing
+    try:
+        cursor.execute("ALTER TABLE receipts ADD COLUMN is_paid INTEGER DEFAULT 1")
+    except:
+        pass
 
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS receipt_items (
@@ -216,10 +223,27 @@ def save_receipt(cart, total, cash, change_amount):
 def get_all_receipts():
     conn = get_connection()
     cursor = conn.cursor()
-    cursor.execute("SELECT date, time, receipt_no FROM receipts ORDER BY id DESC")
+    cursor.execute("SELECT date, time, receipt_no, total, is_paid FROM receipts ORDER BY id DESC")
     rows = cursor.fetchall()
     conn.close()
     return rows
+
+
+def toggle_receipt_paid(receipt_no):
+    conn = get_connection()
+    cursor = conn.cursor()
+    cursor.execute("UPDATE receipts SET is_paid = CASE WHEN is_paid = 1 THEN 0 ELSE 1 END WHERE receipt_no = ?", (receipt_no,))
+    conn.commit()
+    conn.close()
+
+
+def delete_receipt(receipt_no):
+    conn = get_connection()
+    cursor = conn.cursor()
+    cursor.execute("DELETE FROM receipt_items WHERE receipt_no = ?", (receipt_no,))
+    cursor.execute("DELETE FROM receipts WHERE receipt_no = ?", (receipt_no,))
+    conn.commit()
+    conn.close()
 
 def get_receipt_by_no(receipt_no):
     conn = get_connection()

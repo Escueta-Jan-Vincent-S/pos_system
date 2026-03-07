@@ -47,14 +47,12 @@ class ReceiptsPage(ctk.CTkFrame):
         col_header.pack_propagate(False)
 
         ctk.CTkFrame(col_header, fg_color="#000000", width=2, corner_radius=0).pack(side="left", fill="y")
-        for txt, w in [("DATE", 140), ("TIME", 140), ("RECEIPT NO.", 0)]:
+        for txt, w in [("DATE", 120), ("TIME", 100), ("RECEIPT NO.", 160), ("TOTAL", 120), ("STATUS", 130)]:
             ctk.CTkLabel(col_header, text=txt,
                 font=ctk.CTkFont(size=16, weight="bold"),
                 text_color="#000000",
-                width=w if w else 0,
-                anchor="center"
-            ).pack(side="left", fill="x" if w == 0 else "none",
-                   expand=(w == 0), padx=10, pady=10)
+                width=w, anchor="center"
+            ).pack(side="left", padx=10, pady=10)
             ctk.CTkFrame(col_header, fg_color="#000000", width=2, corner_radius=0).pack(side="left", fill="y")
 
         ctk.CTkFrame(self, fg_color="#000000", height=2, corner_radius=0).pack(fill="x")
@@ -67,23 +65,41 @@ class ReceiptsPage(ctk.CTkFrame):
         # ── Bottom bar ────────────────────────────────────────
         ctk.CTkFrame(self, fg_color="#000000", height=2, corner_radius=0).pack(fill="x")
 
-        bottom = ctk.CTkFrame(self, fg_color="#00BFFF", height=55, corner_radius=0)
+        bottom = ctk.CTkFrame(self, fg_color="#00BFFF", height=65, corner_radius=0)
         bottom.pack(fill="x", side="bottom")
         bottom.pack_propagate(False)
 
         self.status_label = ctk.CTkLabel(
-            bottom, text="Select a receipt to print.",
+            bottom, text="Select a receipt to manage.",
             font=ctk.CTkFont(size=14),
             text_color="#000000"
         )
         self.status_label.pack(side="left", padx=20, pady=10)
+
+        ctk.CTkButton(
+            bottom, text="🗑 DELETE",
+            fg_color="#FF4444", text_color="#ffffff",
+            hover_color="#cc0000", border_color="#000000", border_width=2,
+            font=ctk.CTkFont(size=14, weight="bold"),
+            corner_radius=0, width=130, height=45,
+            command=self._on_delete
+        ).pack(side="right", padx=(5, 20))
+
+        ctk.CTkButton(
+            bottom, text="💰 TOGGLE PAID",
+            fg_color="#FFD700", text_color="#000000",
+            hover_color="#e6c200", border_color="#000000", border_width=2,
+            font=ctk.CTkFont(size=14, weight="bold"),
+            corner_radius=0, width=160, height=45,
+            command=self._on_toggle_paid
+        ).pack(side="right", padx=5)
 
         self.selected_label = ctk.CTkLabel(
             bottom, text="",
             font=ctk.CTkFont(size=14, weight="bold"),
             text_color="#000000"
         )
-        self.selected_label.pack(side="right", padx=20)
+        self.selected_label.pack(side="right", padx=10)
 
     # ── Load / Refresh ────────────────────────────────────────
     def load_items(self):
@@ -108,7 +124,7 @@ class ReceiptsPage(ctk.CTkFrame):
 
         self._row_frames = []
 
-        for i, (date, time, receipt_no) in enumerate(records):
+        for i, (date, time, receipt_no, total, is_paid) in enumerate(records):
             bg = "#f5f5f5" if i % 2 == 0 else "#ffffff"
 
             row = ctk.CTkFrame(self.rows_frame, fg_color=bg,
@@ -120,22 +136,36 @@ class ReceiptsPage(ctk.CTkFrame):
 
             ctk.CTkLabel(row, text=date,
                 font=ctk.CTkFont(size=15), text_color="#000000",
-                width=140, anchor="center"
+                width=120, anchor="center"
             ).pack(side="left", padx=10)
-
             ctk.CTkFrame(row, fg_color="#000000", width=1, corner_radius=0).pack(side="left", fill="y")
 
             ctk.CTkLabel(row, text=time,
                 font=ctk.CTkFont(size=15), text_color="#000000",
-                width=140, anchor="center"
+                width=100, anchor="center"
             ).pack(side="left", padx=10)
-
             ctk.CTkFrame(row, fg_color="#000000", width=1, corner_radius=0).pack(side="left", fill="y")
 
             ctk.CTkLabel(row, text=receipt_no,
                 font=ctk.CTkFont(size=15), text_color="#000000",
-                anchor="center"
-            ).pack(side="left", fill="x", expand=True, padx=10)
+                width=160, anchor="center"
+            ).pack(side="left", padx=10)
+            ctk.CTkFrame(row, fg_color="#000000", width=1, corner_radius=0).pack(side="left", fill="y")
+
+            ctk.CTkLabel(row, text=f"₱{total:.2f}",
+                font=ctk.CTkFont(size=15), text_color="#000000",
+                width=120, anchor="center"
+            ).pack(side="left", padx=10)
+            ctk.CTkFrame(row, fg_color="#000000", width=1, corner_radius=0).pack(side="left", fill="y")
+
+            # Paid badge
+            badge_color = "#228B22" if is_paid else "#FF4444"
+            badge_text  = "✔ PAID" if is_paid else "✘ UNPAID"
+            ctk.CTkLabel(row, text=badge_text,
+                font=ctk.CTkFont(size=13, weight="bold"),
+                text_color="#ffffff", fg_color=badge_color,
+                corner_radius=6, width=100, anchor="center"
+            ).pack(side="left", padx=15)
 
             ctk.CTkFrame(row, fg_color="#000000", width=1, corner_radius=0).pack(side="right", fill="y")
 
@@ -165,7 +195,64 @@ class ReceiptsPage(ctk.CTkFrame):
 
         self.ctrl.select(receipt_no)
         self.selected_label.configure(text=f"Selected: {receipt_no}")
-        self.status_label.configure(text="Press PRINT to print this receipt.")
+        self.status_label.configure(text="Ready — Print, Toggle Paid, or Delete.")
+
+    # ── Toggle Paid ───────────────────────────────────────────
+    def _on_toggle_paid(self):
+        if not self.ctrl.selected_receipt_no:
+            self._show_msg("Please select a receipt first!", error=True)
+            return
+        err = self.ctrl.toggle_paid()
+        if err:
+            self._show_msg(err, error=True)
+        else:
+            self._render_rows()
+            self.selected_label.configure(text="")
+            self.status_label.configure(text="Payment status updated.")
+
+    # ── Delete ────────────────────────────────────────────────
+    def _on_delete(self):
+        if not self.ctrl.selected_receipt_no:
+            self._show_msg("Please select a receipt first!", error=True)
+            return
+
+        popup = ctk.CTkToplevel(self)
+        popup.title("Confirm Delete")
+        popup.geometry("380x180")
+        popup.resizable(False, False)
+        popup.grab_set()
+        popup.lift()
+
+        ctk.CTkLabel(popup,
+            text=f"Delete receipt {self.ctrl.selected_receipt_no}?\nThis cannot be undone.",
+            font=ctk.CTkFont(size=14), text_color="#000000", justify="center"
+        ).pack(pady=25)
+
+        btn_row = ctk.CTkFrame(popup, fg_color="transparent")
+        btn_row.pack()
+
+        def confirm():
+            popup.destroy()
+            self.ctrl.delete_selected()
+            self.selected_label.configure(text="")
+            self.status_label.configure(text="Receipt deleted.")
+            self._render_rows()
+
+        ctk.CTkButton(btn_row, text="YES, DELETE",
+            fg_color="#FF4444", text_color="#ffffff",
+            hover_color="#cc0000", border_color="#000000", border_width=2,
+            font=ctk.CTkFont(size=13, weight="bold"),
+            corner_radius=0, width=140, height=45,
+            command=confirm
+        ).pack(side="left", padx=10)
+
+        ctk.CTkButton(btn_row, text="CANCEL",
+            fg_color="#d3d3d3", text_color="#000000",
+            hover_color="#c0c0c0", border_color="#000000", border_width=2,
+            font=ctk.CTkFont(size=13, weight="bold"),
+            corner_radius=0, width=140, height=45,
+            command=popup.destroy
+        ).pack(side="left", padx=10)
 
     # ── Print ─────────────────────────────────────────────────
     def _on_print(self):

@@ -1,4 +1,4 @@
-from database.database import get_all_receipts, get_receipt_by_no
+from database.database import get_all_receipts, get_receipt_by_no, toggle_receipt_paid, delete_receipt
 from controllers.receipt_controller import print_pdf, print_usb
 
 
@@ -8,7 +8,7 @@ class ReceiptsController:
         self.selected_receipt_no = None
 
     def load_all(self):
-        """Return list of (date, time, receipt_no) for the table."""
+        """Return list of (date, time, receipt_no, total, is_paid) for the table."""
         return get_all_receipts()
 
     def select(self, receipt_no):
@@ -21,6 +21,19 @@ class ReceiptsController:
         if not cart:
             return None, "Receipt not found!"
         return cart, None
+
+    def toggle_paid(self):
+        if not self.selected_receipt_no:
+            return "No receipt selected!"
+        toggle_receipt_paid(self.selected_receipt_no)
+        return None
+
+    def delete_selected(self):
+        if not self.selected_receipt_no:
+            return "No receipt selected!"
+        delete_receipt(self.selected_receipt_no)
+        self.selected_receipt_no = None
+        return None
 
     def print_selected_pdf(self):
         cart, err = self.get_selected_cart()
