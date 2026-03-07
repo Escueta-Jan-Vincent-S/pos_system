@@ -92,6 +92,16 @@ def initialize_db():
     """)
 
     cursor.execute("""
+        CREATE TABLE IF NOT EXISTS demand_log (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            barcode TEXT NOT NULL,
+            item_name TEXT NOT NULL,
+            qty INTEGER DEFAULT 0,
+            log_date TEXT NOT NULL
+        )
+    """)
+
+    cursor.execute("""
         INSERT OR IGNORE INTO accounts (email, role, is_current)
         VALUES ('admin@gmail.com', 'admin', 1)
     """)
@@ -303,3 +313,115 @@ def update_all_classifications():
     cursor.execute("UPDATE items SET classification='' WHERE weekly_demand = 0")
     conn.commit()
     conn.close()
+def log_demand(cart):
+    """Log sold quantities to demand_log table. Called after every payment."""
+    from datetime import datetime
+    conn = get_connection()
+    cursor = conn.cursor()
+    today = datetime.now().strftime("%Y-%m-%d")
+    for item in cart:
+        # Add to existing log entry for today, or insert new
+        cursor.execute("""
+            SELECT id, qty FROM demand_log
+            WHERE barcode=? AND log_date=?
+        """, (item["barcode"], today))
+        existing = cursor.fetchone()
+        if existing:
+            cursor.execute("UPDATE demand_log SET qty=? WHERE id=?",
+                           (existing[1] + item["quantity"], existing[0]))
+        else:
+            cursor.execute("""
+                INSERT INTO demand_log (barcode, item_name, qty, log_date)
+                VALUES (?, ?, ?, ?)
+            """, (item["barcode"], item["item_name"], item["quantity"], today))
+    conn.commit()
+    conn.close()
+
+
+def get_demand_summary(timeframe):
+    """
+    Returns {barcode: total_qty} for the selected timeframe.
+    Daily   = today only
+    Weekly  = current week (Mon-Sun)
+    Monthly = current month
+    Annually= current year
+    """
+    from datetime import datetime, timedelta
+    conn = get_connection()
+    cursor = conn.cursor()
+    today = datetime.now().date()
+
+    if timeframe == "Daily":
+        date_filter = str(today)
+        cursor.execute("""
+            SELECT barcode, item_name, SUM(qty) FROM demand_log
+            WHERE log_date = ?
+            GROUP BY barcode
+        """, (date_filter,))
+
+    elif timeframe == "Weekly":
+        # Monday of current week
+        monday = today - timedelta(days=today.weekday())
+        sunday = monday + timedelta(days=6)
+        cursor.execute("""
+            SELECT barcode, item_name, SUM(qty) FROM demand_log
+            WHERE log_date BETWEEN ? AND ?
+            GROUP BY barcode
+        """, (str(monday), str(sunday)))
+
+    elif timeframe == "Monthly":
+        month_start = today.replace(day=1)
+        cursor.execute("""
+            SELECT barcode, item_name, SUM(qty) FROM demand_log
+            WHERE strftime('%Y-%m', log_date) = ?
+            GROUP BY barcode
+        """, (today.strftime("%Y-%m"),))
+
+    elif timeframe == "Annually":
+        cursor.execute("""
+            SELECT barcode, item_name, SUM(qty) FROM demand_log
+            WHERE strftime('%Y', log_date) = ?
+            GROUP BY barcode
+        """, (str(today.year),))
+
+    rows = cursor.fetchall()
+    conn.close()
+    return {r[0]: {"item_name": r[1], "qty": r[2]} for r in rows}
+
+
+def update_weekly_demand_from_timeframe(timeframe):
+    """
+    Update weekly_demand column for all items based on selected timeframe.
+    For Weekly: use direct sum.
+    For Daily: qty * 7 (projected weekly).
+    For Monthly: qty / 4 (avg weekly).
+    For Annually: qty / 52 (avg weekly).
+    """
+    summary = get_demand_summary(timeframe)
+    if not summary:
+        return 0  # no data
+
+    conn = get_connection()
+    cursor = conn.cursor()
+    updated = 0
+
+    for barcode, data in summary.items():
+        qty = data["qty"]
+        if timeframe == "Daily":
+            weekly = round(qty * 7, 2)
+        elif timeframe == "Weekly":
+            weekly = round(qty, 2)
+        elif timeframe == "Monthly":
+            weekly = round(qty / 4, 2)
+        elif timeframe == "Annually":
+            weekly = round(qty / 52, 2)
+        else:
+            weekly = qty
+
+        cursor.execute("UPDATE items SET weekly_demand=? WHERE barcode=?",
+                       (weekly, barcode))
+        updated += 1
+
+    conn.commit()
+    conn.close()
+    return updated

@@ -1,4 +1,4 @@
-from database.database import get_item_by_barcode, update_item, save_receipt, get_receipt_by_no, mark_receipt_paid
+from database.database import get_item_by_barcode, update_item, save_receipt, get_receipt_by_no, mark_receipt_paid, log_demand
 import controllers.controller as c
 
 
@@ -168,5 +168,8 @@ class SellController:
             self.loaded_receipt_no = None
         else:
             receipt_no = save_receipt(self.cart, total, cash, self.get_change(), is_paid=1)
+
+        # Log demand from this sale
+        log_demand(self.cart)
 
         return receipt_no, None  # success

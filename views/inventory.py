@@ -157,7 +157,6 @@ class InventoryPage(ctk.CTkFrame):
             ("REORDER TABLE", "#90EE90", "#000000", "#7dd67d", lambda: controller.navigate("reorder_table")),
             ("EDIT ITEM",     "#d3d3d3", "#000000", "#c0c0c0", lambda: self.open_edit_item()),
             ("DELETE ITEM",   "#FF4444", "#ffffff", "#cc0000", lambda: self.open_delete_confirm()),
-            ("DAILY",         "#d3d3d3", "#000000", "#c0c0c0", lambda: print("DAILY clicked")),
         ]
 
         for text, bg, fg, hover, cmd in btn_configs:
@@ -167,6 +166,20 @@ class InventoryPage(ctk.CTkFrame):
                 font=ctk.CTkFont(size=26, weight="bold"),
                 corner_radius=0, height=60, command=cmd
             ).pack(side="left", padx=5, expand=True, fill="x")
+
+        # DAILY dropdown — right side
+        self.daily_var = ctk.StringVar(value="DAILY  ▼")
+        ctk.CTkOptionMenu(
+            btn_frame,
+            variable=self.daily_var,
+            values=["Daily", "Weekly", "Monthly", "Annually"],
+            command=self._on_daily_select,
+            fg_color="#d3d3d3", text_color="#000000",
+            button_color="#c0c0c0", button_hover_color="#aaaaaa",
+            dropdown_fg_color="#ffffff", dropdown_text_color="#000000",
+            font=ctk.CTkFont(size=22, weight="bold"),
+            width=200, height=60
+        ).pack(side="left", padx=5)
 
     def load_items(self):
         for widget in self.rows_frame.winfo_children():
@@ -303,6 +316,38 @@ class InventoryPage(ctk.CTkFrame):
             return
         c._app.receipt_page.load_receipt(self.cart)
         controller.navigate("receipt")
+
+    def _on_daily_select(self, timeframe):
+        from database.database import update_weekly_demand_from_timeframe, update_all_classifications
+        updated = update_weekly_demand_from_timeframe(timeframe)
+        self.daily_var.set("DAILY  ▼")
+
+        if updated == 0:
+            self._warning(f"No sales data found for '{timeframe}'.\nMake sales first to track demand.")
+            return
+
+        # Re-run ABC classification based on new weekly_demand values
+        update_all_classifications()
+
+        # Refresh table
+        self.load_items()
+
+        # Show confirmation
+        popup = ctk.CTkToplevel(self)
+        popup.title("Demand Updated")
+        popup.geometry("380x160")
+        popup.resizable(False, False)
+        popup.grab_set()
+        popup.lift()
+        ctk.CTkLabel(popup,
+            text=f"✅ {timeframe} demand updated!\n{updated} item(s) weekly demand refreshed.",
+            font=ctk.CTkFont(size=14, weight="bold"),
+            text_color="#000000", justify="center"
+        ).pack(expand=True)
+        ctk.CTkButton(popup, text="OK", command=popup.destroy,
+            fg_color="#90EE90", text_color="#000000",
+            corner_radius=0, width=100
+        ).pack(pady=10)
 
     def _warning(self, message):
         popup = ctk.CTkToplevel(self)
