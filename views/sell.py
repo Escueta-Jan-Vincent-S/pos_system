@@ -82,17 +82,23 @@ class SellPage(ctk.CTkFrame):
         col_header = ctk.CTkFrame(left, fg_color="#000000", corner_radius=0, height=40)
         col_header.pack(fill="x")
         col_header.pack_propagate(False)
-        col_header.grid_columnconfigure(0, weight=3)
-        col_header.grid_columnconfigure(1, weight=1)
-        col_header.grid_columnconfigure(2, weight=1)
-        col_header.grid_columnconfigure(3, weight=1)
-        col_header.grid_columnconfigure(4, weight=0)
+        col_header.grid_columnconfigure(0, weight=46)
+        col_header.grid_columnconfigure(1, weight=14)
+        col_header.grid_columnconfigure(2, weight=18)
+        col_header.grid_columnconfigure(3, weight=14)
+        col_header.grid_columnconfigure(4, weight=8)
 
-        for i, txt in enumerate(["DESCRIPTION", "UNIT PRICE", "QTY", "AMOUNT", ""]):
+        for i, (txt, anchor) in enumerate([
+            ("DESCRIPTION", "w"),
+            ("UNIT PRICE",  "w"),
+            ("QTY",         "center"),
+            ("AMOUNT",      "e"),
+            ("",            "e"),
+        ]):
             ctk.CTkLabel(col_header, text=txt,
                 font=ctk.CTkFont(size=13, weight="bold"),
-                text_color="#ffffff"
-            ).grid(row=0, column=i, padx=8, pady=8, sticky="w" if i == 0 else "e")
+                text_color="#ffffff", anchor=anchor
+            ).grid(row=0, column=i, padx=8, pady=8, sticky="ew")
 
         # Scrollable cart rows
         self.cart_frame = ctk.CTkScrollableFrame(
@@ -240,21 +246,21 @@ class SellPage(ctk.CTkFrame):
             row.pack(fill="x", pady=1)
             row.pack_propagate(False)
 
-            # Description (0% - 42%)
+            # Description (0% - 46%)
             ctk.CTkLabel(row, text=item["item_name"],
                 font=ctk.CTkFont(size=15), text_color="#000000",
                 anchor="w", fg_color=bg
-            ).place(relx=0.01, rely=0.5, anchor="w", relwidth=0.41)
+            ).place(relx=0.01, rely=0.5, anchor="w", relwidth=0.44)
 
-            # Unit Price (42% - 58%)
+            # Unit Price — aligned under UNIT PRICE header
             ctk.CTkLabel(row, text=f"₱{item['selling_price']:.2f}",
                 font=ctk.CTkFont(size=14), text_color="#555555",
-                anchor="center", fg_color=bg
-            ).place(relx=0.50, rely=0.5, anchor="center", relwidth=0.16)
+                anchor="w", fg_color=bg
+            ).place(relx=0.45, rely=0.5, anchor="w", relwidth=0.14)
 
-            # +/- QTY (58% - 76%)
+            # +/- QTY (60% - 78%) — centered under QTY header
             btn_frame = ctk.CTkFrame(row, fg_color=bg, corner_radius=0)
-            btn_frame.place(relx=0.67, rely=0.5, anchor="center")
+            btn_frame.place(relx=0.69, rely=0.5, anchor="center")
 
             ctk.CTkButton(btn_frame, text="-",
                 fg_color="#d3d3d3", text_color="#000000", hover_color="#c0c0c0",
@@ -275,11 +281,11 @@ class SellPage(ctk.CTkFrame):
                 command=lambda b=item["barcode"]: self._on_increment(b)
             ).pack(side="left", padx=1)
 
-            # Amount (76% - 93%)
+            # Amount (78% - 93%) — right-aligned under AMOUNT header
             ctk.CTkLabel(row, text=f"₱{amount:.2f}",
                 font=ctk.CTkFont(size=15, weight="bold"), text_color="#000000",
                 anchor="e", fg_color=bg
-            ).place(relx=0.84, rely=0.5, anchor="center", relwidth=0.16)
+            ).place(relx=0.79, rely=0.5, anchor="w", relwidth=0.14)
 
             # Remove button
             ctk.CTkButton(row, text="✕",
