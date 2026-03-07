@@ -361,7 +361,7 @@ class SellPage(ctk.CTkFrame):
 
         def go_receipt():
             popup.destroy()
-            c._app.receipt_page.load_receipt(cart)
+            c._app.receipt_page.load_receipt(cart, receipt_no=receipt_no)
             controller.navigate("receipt")
 
         def new_sale():

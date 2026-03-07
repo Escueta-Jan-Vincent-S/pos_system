@@ -198,27 +198,41 @@ def update_reorder_info(barcode, safety_stock, rop, min_level, max_level, status
     conn.commit()
     conn.close()
 
-def save_receipt(cart, total, cash, change_amount):
+def save_receipt(cart, total, cash, change_amount, is_paid=1, receipt_no=None):
     import random
     from datetime import datetime
     conn = get_connection()
     cursor = conn.cursor()
-    receipt_no = f"REC{random.randint(10000, 99999)}"
+    if not receipt_no:
+        receipt_no = f"REC{random.randint(10000, 99999)}"
     now = datetime.now()
     date_str = now.strftime("%m/%d/%y")
     time_str = now.strftime("%H:%M")
     cursor.execute("""
-        INSERT INTO receipts (receipt_no, date, time, total, cash, change_amount)
-        VALUES (?, ?, ?, ?, ?, ?)
-    """, (receipt_no, date_str, time_str, total, cash, change_amount))
-    for item in cart:
-        cursor.execute("""
-            INSERT INTO receipt_items (receipt_no, barcode, item_name, selling_price, quantity)
-            VALUES (?, ?, ?, ?, ?)
-        """, (receipt_no, item["barcode"], item["item_name"], item["selling_price"], item["quantity"]))
+        INSERT OR IGNORE INTO receipts (receipt_no, date, time, total, cash, change_amount, is_paid)
+        VALUES (?, ?, ?, ?, ?, ?, ?)
+    """, (receipt_no, date_str, time_str, total, cash, change_amount, is_paid))
+    # Only insert items if this is a new receipt
+    cursor.execute("SELECT COUNT(*) FROM receipt_items WHERE receipt_no = ?", (receipt_no,))
+    if cursor.fetchone()[0] == 0:
+        for item in cart:
+            cursor.execute("""
+                INSERT INTO receipt_items (receipt_no, barcode, item_name, selling_price, quantity)
+                VALUES (?, ?, ?, ?, ?)
+            """, (receipt_no, item["barcode"], item["item_name"], item["selling_price"], item["quantity"]))
     conn.commit()
     conn.close()
     return receipt_no
+
+
+def mark_receipt_paid(receipt_no, cash, change_amount):
+    conn = get_connection()
+    cursor = conn.cursor()
+    cursor.execute("""
+        UPDATE receipts SET is_paid=1, cash=?, change_amount=? WHERE receipt_no=?
+    """, (cash, change_amount, receipt_no))
+    conn.commit()
+    conn.close()
 
 def get_all_receipts():
     conn = get_connection()

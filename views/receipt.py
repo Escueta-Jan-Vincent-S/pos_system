@@ -1,6 +1,7 @@
 import customtkinter as ctk
 from controllers import controller
 from controllers.receipt_controller import print_pdf, print_usb
+from database.database import save_receipt as db_save_receipt
 from datetime import datetime
 import random
 import io
@@ -66,9 +67,18 @@ class ReceiptPage(ctk.CTkFrame):
             command=self.do_pdf_print
         ).pack(pady=5)
 
-    def load_receipt(self, cart):
+    def load_receipt(self, cart, receipt_no=None):
         self.cart = cart
-        self.receipt_no = f"REC{random.randint(10000, 99999)}"
+        # Use provided receipt_no (from sell page) or generate new one
+        if receipt_no:
+            self.receipt_no = receipt_no
+        else:
+            self.receipt_no = f"REC{random.randint(10000, 99999)}"
+
+        # Save to DB as UNPAID so it appears in receipts list
+        total = sum(i["selling_price"] * i["quantity"] for i in cart)
+        db_save_receipt(cart, total, 0, 0, is_paid=0, receipt_no=self.receipt_no)
+
         now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
         for widget in self.card.winfo_children():

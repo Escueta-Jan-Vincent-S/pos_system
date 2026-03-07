@@ -1,4 +1,4 @@
-from database.database import get_item_by_barcode, update_item, save_receipt, get_receipt_by_no
+from database.database import get_item_by_barcode, update_item, save_receipt, get_receipt_by_no, mark_receipt_paid
 import controllers.controller as c
 
 
@@ -8,6 +8,7 @@ class SellController:
         self.cart = []
         self.cash_input = ""
         self.mode = "manual"  # "manual" or "scan"
+        self.loaded_receipt_no = None  # set when cart loaded from REC lookup
 
     # ── Cart Management ───────────────────────────────────────
     def add_by_barcode(self, barcode):
@@ -81,6 +82,9 @@ class SellController:
                     "quantity": qty
                 })
 
+        # Remember which receipt we loaded so we can mark it paid on payment
+        self.loaded_receipt_no = receipt_no
+
         if errors:
             return "Loaded with issues:\n" + "\n".join(errors)
         return None  # success
@@ -109,6 +113,7 @@ class SellController:
     def clear_cart(self):
         self.cart = []
         self.cash_input = ""
+        self.loaded_receipt_no = None
 
     def get_total(self):
         return sum(i["selling_price"] * i["quantity"] for i in self.cart)
@@ -152,7 +157,13 @@ class SellController:
                 update_item(item["barcode"], db_item[2], db_item[3],
                             float(db_item[4]), float(db_item[5]), new_stock)
 
-        # Save to receipts table
-        receipt_no = save_receipt(self.cart, total, cash, self.get_change())
+        # If cart was loaded from an existing receipt, mark it paid
+        # Otherwise create a brand-new receipt
+        if self.loaded_receipt_no:
+            mark_receipt_paid(self.loaded_receipt_no, cash, self.get_change())
+            receipt_no = self.loaded_receipt_no
+            self.loaded_receipt_no = None
+        else:
+            receipt_no = save_receipt(self.cart, total, cash, self.get_change(), is_paid=1)
 
         return receipt_no, None  # success
