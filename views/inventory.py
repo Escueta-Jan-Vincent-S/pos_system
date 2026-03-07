@@ -26,10 +26,26 @@ class InventoryPage(ctk.CTkFrame):
 
         ctk.CTkLabel(
             header,
-            text="INVENTORY / ITEM MASTERLIST (THE DATA BASE)",
-            font=ctk.CTkFont(size=22, weight="bold"),
+            text="INVENTORY / ITEM",
+            font=ctk.CTkFont(size=60, weight="bold"),
             text_color="#000000"
         ).place(relx=0.5, rely=0.5, anchor="center")
+
+        # Search bar on the right of header
+        search_frame = ctk.CTkFrame(header, fg_color="transparent")
+        search_frame.pack(side="right", padx=15)
+
+        ctk.CTkLabel(search_frame, text="🔍",
+            font=ctk.CTkFont(size=18),
+            text_color="#000000"
+        ).pack(side="left", padx=(0, 5))
+
+        self.search_entry = ctk.CTkEntry(
+            search_frame, placeholder_text="Search name, category, barcode...",
+            width=280, height=38, font=ctk.CTkFont(size=14)
+        )
+        self.search_entry.pack(side="left")
+        self.search_entry.bind("<KeyRelease>", lambda e: self.load_items())
 
         ctk.CTkFrame(self, fg_color="#000000", height=2, corner_radius=0).pack(fill="x")
 
@@ -132,49 +148,25 @@ class InventoryPage(ctk.CTkFrame):
             command=self.go_to_receipt
         ).pack(fill="x", padx=10, pady=5)
 
-        # ── Bottom Buttons ────────────────────────────────────
         btn_frame = ctk.CTkFrame(self, fg_color="#ffffff", height=80, corner_radius=0)
         btn_frame.pack(fill="x", padx=10, pady=10)
         btn_frame.pack_propagate(False)
 
-        left_btns = ctk.CTkFrame(btn_frame, fg_color="#ffffff", corner_radius=0)
-        left_btns.pack(side="left")
-
         btn_configs = [
-            ("ADD ITEM",      "#90EE90", "#000000", lambda: self.open_add_item()),
-            ("REORDER TABLE", "#90EE90", "#000000", lambda: controller.navigate("reorder_table")),
-            ("EDIT ITEM",     "#d3d3d3", "#000000", lambda: self.open_edit_item()),
-            ("DELETE ITEM",   "#FF4444", "#ffffff", lambda: self.open_delete_confirm()),
+            ("ADD ITEM",      "#90EE90", "#000000", "#7dd67d", lambda: self.open_add_item()),
+            ("REORDER TABLE", "#90EE90", "#000000", "#7dd67d", lambda: controller.navigate("reorder_table")),
+            ("EDIT ITEM",     "#d3d3d3", "#000000", "#c0c0c0", lambda: self.open_edit_item()),
+            ("DELETE ITEM",   "#FF4444", "#ffffff", "#cc0000", lambda: self.open_delete_confirm()),
+            ("DAILY",         "#d3d3d3", "#000000", "#c0c0c0", lambda: print("DAILY clicked")),
         ]
 
-        for text, bg, fg, cmd in btn_configs:
+        for text, bg, fg, hover, cmd in btn_configs:
             ctk.CTkButton(
-                left_btns, text=text, fg_color=bg, text_color=fg,
-                hover_color=bg, border_color="#000000", border_width=2,
-                font=ctk.CTkFont(size=30, weight="bold"),
-                corner_radius=0, width=400, height=60, command=cmd
-            ).pack(side="left", padx=5)
-
-        right_btns = ctk.CTkFrame(btn_frame, fg_color="#ffffff", corner_radius=0)
-        right_btns.pack(side="right")
-
-        ctk.CTkButton(
-            right_btns, text="DAILY  ▼",
-            fg_color="#d3d3d3", text_color="#000000",
-            hover_color="#c0c0c0", border_color="#000000", border_width=2,
-            font=ctk.CTkFont(size=25, weight="bold"),
-            corner_radius=0, width=250, height=35,
-            command=lambda: print("DAILY clicked")
-        ).pack(pady=2)
-
-        ctk.CTkButton(
-            right_btns, text="PRINT",
-            fg_color="#FFD700", text_color="#000000",
-            hover_color="#e6c200", border_color="#000000", border_width=2,
-            font=ctk.CTkFont(size=25, weight="bold"),
-            corner_radius=0, width=250, height=35,
-            command=self.go_to_receipt
-        ).pack(pady=2)
+                btn_frame, text=text, fg_color=bg, text_color=fg,
+                hover_color=hover, border_color="#000000", border_width=2,
+                font=ctk.CTkFont(size=26, weight="bold"),
+                corner_radius=0, height=60, command=cmd
+            ).pack(side="left", padx=5, expand=True, fill="x")
 
     def load_items(self):
         for widget in self.rows_frame.winfo_children():
@@ -185,6 +177,14 @@ class InventoryPage(ctk.CTkFrame):
 
         from database.database import get_all_items
         items = get_all_items()
+
+        # Filter by search query
+        query = self.search_entry.get().strip().lower() if hasattr(self, "search_entry") else ""
+        if query:
+            items = [i for i in items if
+                     query in str(i[0]).lower() or  # barcode
+                     query in str(i[1]).lower() or  # item_name
+                     query in str(i[2]).lower()]     # category
 
         for i, item in enumerate(items):
             bg = "#f0f0f0" if i % 2 == 0 else "#d3d3d3"
