@@ -47,9 +47,9 @@ class SellPage(ctk.CTkFrame):
         top_bar.pack_propagate(False)
 
         self.mode_label = ctk.CTkLabel(
-            top_bar, text="⌨ MANUAL",
+            top_bar, text="📷 SCAN",
             font=ctk.CTkFont(size=14, weight="bold"),
-            text_color="#ffffff", fg_color="#888888",
+            text_color="#ffffff", fg_color="#228B22",
             corner_radius=6, width=110
         )
         self.mode_label.pack(side="left", padx=10, pady=10)
@@ -402,115 +402,8 @@ class SellPage(ctk.CTkFrame):
 
     # ── Page entry ────────────────────────────────────────────
     def load_items(self):
-        """Called by show_page — show scanner/manual choice popup."""
-        self._show_mode_popup()
-
-    def _show_mode_popup(self):
-        popup = ctk.CTkToplevel(self)
-        popup.title("Select Input Mode")
-        popup.geometry("420x240")
-        popup.resizable(False, False)
-        popup.grab_set()
-        popup.lift()
-
-        ctk.CTkLabel(popup, text="How would you like to add items?",
-            font=ctk.CTkFont(size=16, weight="bold"),
-            text_color="#000000").pack(pady=25)
-
-        btn_row = ctk.CTkFrame(popup, fg_color="transparent")
-        btn_row.pack(pady=10)
-
-        def choose_manual():
-            self.ctrl.mode = "manual"
-            self.mode_label.configure(text="⌨ MANUAL", fg_color="#888888")
-            self.barcode_entry.configure(state="normal")
-            popup.destroy()
-
-        def choose_scan():
-            popup.destroy()
-            self._try_connect_scanner()
-
-        ctk.CTkButton(btn_row, text="⌨  MANUAL",
-            fg_color="#d3d3d3", text_color="#000000",
-            hover_color="#c0c0c0", border_color="#000000", border_width=2,
-            font=ctk.CTkFont(size=18, weight="bold"),
-            corner_radius=0, width=160, height=70,
-            command=choose_manual
-        ).pack(side="left", padx=15)
-
-        ctk.CTkButton(btn_row, text="📷  SCAN",
-            fg_color="#90EE90", text_color="#000000",
-            hover_color="#7dd67d", border_color="#000000", border_width=2,
-            font=ctk.CTkFont(size=18, weight="bold"),
-            corner_radius=0, width=160, height=70,
-            command=choose_scan
-        ).pack(side="left", padx=15)
-
-    def _try_connect_scanner(self):
-        found = self._detect_scanner()
-        if found:
-            self.ctrl.mode = "scan"
-            self.mode_label.configure(text="📷 SCAN", fg_color="#228B22")
-            self.barcode_entry.configure(state="normal")
-            self.barcode_entry.focus_set()
-            self._info("Scanner detected!\nReady to scan barcodes.")
-        else:
-            self._scanner_not_found_popup()
-
-    def _detect_scanner(self):
-        try:
-            import usb.core
-            known_vendors = [0x05e0, 0x08ff, 0x0536, 0x0c2e, 0x04b8, 0x1eab]
-            for vid in known_vendors:
-                if usb.core.find(idVendor=vid) is not None:
-                    return True
-            return False
-        except Exception:
-            return False
-
-    def _scanner_not_found_popup(self):
-        popup = ctk.CTkToplevel(self)
-        popup.title("Scanner Not Found")
-        popup.geometry("420x220")
-        popup.resizable(False, False)
-        popup.grab_set()
-        popup.lift()
-
-        ctk.CTkLabel(popup, text="⚠️  No Scanner Detected",
-            font=ctk.CTkFont(size=17, weight="bold"),
-            text_color="#FF4444").pack(pady=15)
-        ctk.CTkLabel(popup,
-            text="Make sure your barcode scanner\nis connected and turned on.",
-            font=ctk.CTkFont(size=13), text_color="#000000",
-            justify="center").pack()
-
-        btn_row = ctk.CTkFrame(popup, fg_color="transparent")
-        btn_row.pack(pady=18)
-
-        def retry():
-            popup.destroy()
-            self._try_connect_scanner()
-
-        def use_manual():
-            self.ctrl.mode = "manual"
-            self.mode_label.configure(text="⌨ MANUAL", fg_color="#888888")
-            popup.destroy()
-
-        ctk.CTkButton(btn_row, text="🔄  RETRY",
-            fg_color="#90EE90", text_color="#000000",
-            hover_color="#7dd67d", border_color="#000000", border_width=2,
-            font=ctk.CTkFont(size=14, weight="bold"),
-            corner_radius=0, width=140, height=50,
-            command=retry
-        ).pack(side="left", padx=10)
-
-        ctk.CTkButton(btn_row, text="⌨  USE MANUAL",
-            fg_color="#d3d3d3", text_color="#000000",
-            hover_color="#c0c0c0", border_color="#000000", border_width=2,
-            font=ctk.CTkFont(size=14, weight="bold"),
-            corner_radius=0, width=140, height=50,
-            command=use_manual
-        ).pack(side="left", padx=10)
+        """Called by show_page — just focus barcode entry, scanner is always ready."""
+        self.after(150, self.barcode_entry.focus_set)
 
     # ── Helpers ───────────────────────────────────────────────
     def _warning(self, msg):

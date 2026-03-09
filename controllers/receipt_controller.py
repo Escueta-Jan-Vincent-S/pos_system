@@ -201,7 +201,14 @@ def print_usb(cart, receipt_no):
         from escpos.printer import Usb
         now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
-        printer = Usb(0x04b8, 0x0202)
+        # ── SET YOUR PRINTER USB IDs HERE ─────────────────────
+        # Run in terminal to find your IDs:
+        # Windows: Get-PnpDevice | Select FriendlyName, DeviceID
+        # Look for VID_XXXX&PID_XXXX in the DeviceID
+        VENDOR_ID  = 0x0416   # ← Replace with your VID
+        PRODUCT_ID = 0x5011   # ← Replace with your PID
+        # ─────────────────────────────────────────────────────
+        printer = Usb(VENDOR_ID, PRODUCT_ID)
 
         printer.set(align="center", bold=True)
         printer.text(f"* {STORE_NAME} *\n")
@@ -250,5 +257,5 @@ def print_usb(cart, receipt_no):
 
     except ImportError:
         return "Please install:\npip install python-escpos"
-    except Exception:
-        return "No printer detected!\nMake sure USB thermal\nprinter is connected."
+    except Exception as e:
+        return f"Printer error!\nCheck VID/PID in receipt_controller.py\n\nDetails: {str(e)}"
