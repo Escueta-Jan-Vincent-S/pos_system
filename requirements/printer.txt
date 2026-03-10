@@ -1,0 +1,150 @@
+================================================================
+    POS58 / OC-58H THERMAL PRINTER
+    USB SETUP GUIDE FOR WINDOWS
+================================================================
+    For: Lanz & Lindly Minimart POS System
+    Printer Model: Officom OC-58H (POS58 Printer)
+================================================================
+
+
+----------------------------------------------------------------
+WHAT YOU NEED (One-time setup)
+----------------------------------------------------------------
+1. OC-58H Thermal Printer
+2. USB Cable (comes with printer)
+3. Windows PC with Python installed
+4. Internet connection (for downloads)
+----------------------------------------------------------------
+
+
+================================================================
+STEP 1 — INSTALL PYTHON LIBRARIES
+================================================================
+
+Open PowerShell or Command Prompt and run these one by one:
+
+    pip install python-escpos
+    pip install pyusb
+    pip install libusb-package
+
+Wait for each one to finish before running the next.
+
+
+================================================================
+STEP 2 — INSTALL ZADIG (USB Driver Tool)
+================================================================
+
+1. Go to: https://zadig.akeo.ie
+2. Download "zadig-2.x.exe" (no installation needed)
+3. Plug in the OC-58H printer via USB and turn it ON
+   (you should hear the Windows "plug in" sound)
+4. Right-click zadig.exe → "Run as Administrator"
+5. Click Options (top menu) → check "List All Devices"
+6. Click the dropdown and select "POS58 Printer"
+   - You should see:
+       USB ID : 0FE6  811E
+       Driver : WinUSB
+7. Click "Install Driver" or "Reinstall Driver"
+8. Wait for it to finish (10-30 seconds)
+
+NOTE: If "POS58 Printer" does not appear in the list:
+  - Make sure the printer is plugged in AND turned on
+  - Try a different USB port
+  - Try a different USB cable
+
+
+================================================================
+STEP 3 — VERIFY PRINTER IS DETECTED
+================================================================
+
+Open PowerShell and run:
+
+    python -c "import usb.core; dev = usb.core.find(idVendor=0x0FE6, idProduct=0x811E); print(dev)"
+
+If the printer is detected correctly, you will see a long
+description starting with:
+
+    DEVICE ID 0fe6:811e on Bus 001 ...
+
+If it shows "None" or an error:
+  - Repeat Step 2 (Zadig)
+  - Make sure libusb-package is installed (Step 1)
+  - Try running PowerShell as Administrator
+
+
+================================================================
+STEP 4 — TEST PRINT
+================================================================
+
+Run this in PowerShell to do a test print:
+
+    python -c "from escpos.printer import Usb; p = Usb(0x0FE6, 0x811E); p.text('TEST PRINT\n\n\n'); p.cut()"
+
+If it prints "TEST PRINT" — setup is complete! ✅
+If it gives an error — see TROUBLESHOOTING below.
+
+
+================================================================
+STEP 5 — RUN THE POS SYSTEM
+================================================================
+
+1. Make sure the printer is plugged in and turned on
+2. Run the POS system: python main.py
+3. Complete a sale in the SELL page
+4. After payment, click "PRINT RECEIPT"
+5. Choose "USB Print"
+
+
+----------------------------------------------------------------
+TROUBLESHOOTING
+----------------------------------------------------------------
+
+PROBLEM : "No backend available" error
+SOLUTION: Run this in PowerShell:
+          pip install libusb-package
+          Then try again.
+
+PROBLEM : "Access denied" or "USB error"
+SOLUTION: Run PowerShell as Administrator:
+          Right-click PowerShell → Run as Administrator
+          Then run the app again.
+
+PROBLEM : Printer not showing in Zadig
+SOLUTION: - Make sure printer is ON (power light lit)
+          - Try a different USB port
+          - Click Options → List All Devices in Zadig
+
+PROBLEM : Garbled characters printing instead of barcode
+SOLUTION: This is a driver issue. Repeat Step 2 (Zadig)
+          and make sure WinUSB driver is installed.
+
+PROBLEM : Printer detected but nothing prints
+SOLUTION: - Check USB cable (try a different one)
+          - Turn printer off and on again
+          - Unplug and replug USB cable
+          - Run the app as Administrator
+
+PROBLEM : "No module named escpos" error
+SOLUTION: Run: pip install python-escpos
+
+PROBLEM : "No module named usb" error
+SOLUTION: Run: pip install pyusb
+----------------------------------------------------------------
+
+
+================================================================
+QUICK REFERENCE — USB IDs for OC-58H
+================================================================
+
+    Vendor ID  : 0x0FE6
+    Product ID : 0x811E
+    Driver     : WinUSB (installed via Zadig)
+    Protocol   : ESC/POS
+
+These IDs are already set in the POS system code.
+Do NOT change them unless you replace the printer.
+
+================================================================
+    END OF GUIDE
+    For technical support, contact your system developer.
+================================================================
