@@ -82,23 +82,34 @@ class InventoryPage(ctk.CTkFrame):
         columns = ["Barcode", "Item Name", "Category", "Unit Cost",
                    "Selling Price", "Demand", "Current Stock", "Classification"]
 
-        header_row = ctk.CTkFrame(table_frame, fg_color="#000000", corner_radius=0)
-        header_row.pack(fill="x")
+        # col weights: Barcode=1, Item Name=3, Category=1, Unit Cost=1, Selling Price=1,
+        #              Demand=1, Current Stock=1, Classification=1
+        self._col_weights = [1, 3, 1, 1, 1, 1, 1, 1]
+        # anchor per column
+        self._col_anchors = ["center", "w", "center", "center", "center", "center", "center", "center"]
 
-        for i, col in enumerate(columns):
-            header_row.grid_columnconfigure(i, weight=1, uniform="col")
-            ctk.CTkLabel(
-                header_row, text=col,
-                font=ctk.CTkFont(size=25, weight="bold"),
-                text_color="white", justify="center"
-            ).grid(row=0, column=i, sticky="nsew", padx=1, pady=12)
-
+        # Single scrollable frame — header at row 0, data from row 1 onward
         self.rows_frame = ctk.CTkScrollableFrame(
-            table_frame, fg_color="#ffffff", corner_radius=0)
+            table_frame, fg_color="#000000", corner_radius=0)
         self.rows_frame.pack(fill="both", expand=True)
 
-        for i in range(len(columns)):
-            self.rows_frame.grid_columnconfigure(i, weight=1, uniform="col")
+        for i, w in enumerate(self._col_weights):
+            self.rows_frame.grid_columnconfigure(i, weight=w)
+
+        # ── Header row inside the scroll frame ───────────────
+        for i, col in enumerate(columns):
+            anchor = self._col_anchors[i]
+            padx_left = 10 if anchor == "w" else 2
+            ctk.CTkLabel(
+                self.rows_frame, text=col,
+                font=ctk.CTkFont(size=16, weight="bold"),
+                text_color="white",
+                fg_color="#000000",
+                anchor=anchor,
+                justify="left" if anchor == "w" else "right" if anchor == "e" else "center",
+                padx=12 if anchor == "w" else 4
+            ).grid(row=0, column=i, sticky="nsew",
+                   padx=(0, 1 if i < len(columns)-1 else 0), pady=0, ipady=10)
 
         self.load_items()
 
@@ -373,8 +384,11 @@ class InventoryPage(ctk.CTkFrame):
     def load_items(self):
         self.refresh_role_ui()
 
+        # Remove only data rows — keep header labels at grid row 0
         for widget in self.rows_frame.winfo_children():
-            widget.destroy()
+            info = widget.grid_info()
+            if info and int(info.get("row", 0)) > 0:
+                widget.destroy()
 
         self.selected_barcode = None
         self.selected_row_labels = []
@@ -391,6 +405,7 @@ class InventoryPage(ctk.CTkFrame):
                      query in str(i[2]).lower()]     # category
 
         for i, item in enumerate(items):
+            row_num = i + 1  # row 0 is the sticky header
             bg = "#f0f0f0" if i % 2 == 0 else "#d3d3d3"
             barcode, item_name, category, unit_cost, selling_price, \
                 current_stock, demand, classification, status = item
@@ -398,22 +413,43 @@ class InventoryPage(ctk.CTkFrame):
             cls_colors = {"A": "#90EE90", "B": "#00BFFF", "C": "#FFD700"}
             cls_bg = cls_colors.get(classification, bg)
 
-            row_data = [barcode, item_name, category, unit_cost, selling_price,
-                        demand, current_stock, classification]
+            # Format values for display
+            def fmt_price(v):
+                try:
+                    return f"₱{float(v):,.2f}"
+                except (TypeError, ValueError):
+                    return "₱0.00"
+
+            display_data = [
+                barcode,
+                item_name,
+                category,
+                fmt_price(unit_cost),
+                fmt_price(selling_price),
+                demand if demand not in (None, "") else 0,
+                current_stock if current_stock not in (None, "") else 0,
+                classification if classification else "—",
+            ]
             row_colors = [bg, bg, bg, bg, bg, bg, bg, cls_bg]
 
             row_labels = []
-            for j, (val, cell_bg) in enumerate(zip(row_data, row_colors)):
+            for j, (val, cell_bg) in enumerate(zip(display_data, row_colors)):
+                anchor = self._col_anchors[j]
+                # For left-anchored (Item Name), add inner text padding so text
+                # doesn't sit right against the black divider
+                lbl_padx = (12, 4) if anchor == "w" else (4, 4)
                 lbl = ctk.CTkLabel(
                     self.rows_frame,
                     text=str(val),
-                    font=ctk.CTkFont(size=18),
+                    font=ctk.CTkFont(size=14),
                     text_color="#000000",
-                    justify="center",
+                    justify="left" if anchor == "w" else "right" if anchor == "e" else "center",
+                    anchor=anchor,
                     fg_color=cell_bg,
-                    cursor="hand2"
+                    cursor="hand2",
+                    padx=lbl_padx[0]
                 )
-                lbl.grid(row=i, column=j, sticky="nsew", padx=1, pady=10)
+                lbl.grid(row=row_num, column=j, sticky="nsew", padx=(0, 1 if j < len(display_data)-1 else 0), pady=0, ipady=8)
                 lbl.bind("<Button-1>", lambda e, b=barcode, rl=row_labels: self.select_row(b, rl))
                 row_labels.append(lbl)
 
