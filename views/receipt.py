@@ -13,7 +13,7 @@ class ReceiptPage(ctk.CTkFrame):
         self.receipt_no = ""
 
         # ── Header ──────────────────────────────────────────
-        header = ctk.CTkFrame(self, fg_color="#90EE90", height=80, corner_radius=0)
+        header = ctk.CTkFrame(self, fg_color="#000000", height=80, corner_radius=0)
         header.pack(fill="x", side="top")
         header.pack_propagate(False)
 
@@ -21,7 +21,7 @@ class ReceiptPage(ctk.CTkFrame):
 
         ctk.CTkButton(
             header, text="<", fg_color="transparent",
-            text_color="#000000", hover_color="#7dd67d",
+            text_color="#ffffff", hover_color="#222222",
             font=ctk.CTkFont(size=40, weight="bold"),
             corner_radius=0, width=60, height=60,
             command=lambda: controller.navigate(self._back_target)
@@ -30,13 +30,13 @@ class ReceiptPage(ctk.CTkFrame):
         ctk.CTkLabel(
             header, text="OFFICIAL RECEIPT",
             font=ctk.CTkFont(size=30, weight="bold"),
-            text_color="#000000"
+            text_color="#ffffff"
         ).place(relx=0.5, rely=0.5, anchor="center")
 
         ctk.CTkFrame(self, fg_color="#000000", height=2, corner_radius=0).pack(fill="x")
 
         # ── Body ─────────────────────────────────────────────
-        body = ctk.CTkFrame(self, fg_color="#ffffff", corner_radius=0)
+        body = ctk.CTkFrame(self, fg_color="#f0f0f0", corner_radius=0)
         body.pack(fill="both", expand=True)
 
         # ── Receipt Card ──────────────────────────────────────
@@ -45,7 +45,7 @@ class ReceiptPage(ctk.CTkFrame):
             border_color="#000000", border_width=2,
             width=566, height=756
         )
-        card_border.place(relx=0.4, rely=0.5, anchor="center")
+        card_border.place(relx=0.5, rely=0.5, anchor="center")
         card_border.pack_propagate(False)
 
         self.card = ctk.CTkScrollableFrame(
@@ -55,27 +55,28 @@ class ReceiptPage(ctk.CTkFrame):
         )
         self.card.pack(fill="both", expand=True)
 
-        # ── Right Buttons ─────────────────────────────────────
-        right = ctk.CTkFrame(body, fg_color="#ffffff", corner_radius=0)
-        right.place(relx=0.82, rely=0.5, anchor="center")
+        # ── Bottom Bar ────────────────────────────────────────
+        bottom_bar = ctk.CTkFrame(self, fg_color="#1a1a1a", height=70, corner_radius=0)
+        bottom_bar.pack(fill="x", side="bottom")
+        bottom_bar.pack_propagate(False)
 
         ctk.CTkButton(
-            right, text="🖨️  USB Thermal",
-            fg_color="#d3d3d3", text_color="#000000",
-            hover_color="#c0c0c0", border_color="#000000", border_width=2,
-            font=ctk.CTkFont(size=16, weight="bold"),
-            corner_radius=0, width=200, height=50,
+            bottom_bar, text="🖨️  USB Thermal",
+            fg_color="#3a3a3a", text_color="#ffffff",
+            hover_color="#555555", border_color="#666666", border_width=1,
+            font=ctk.CTkFont(size=15, weight="bold"),
+            corner_radius=0, width=220, height=46,
             command=self.do_usb_print
-        ).pack(pady=5)
+        ).pack(side="left", padx=(20, 8), pady=12)
 
         ctk.CTkButton(
-            right, text="📄  Save as PDF",
-            fg_color="#90EE90", text_color="#000000",
-            hover_color="#7dd67d", border_color="#000000", border_width=2,
-            font=ctk.CTkFont(size=16, weight="bold"),
-            corner_radius=0, width=200, height=50,
+            bottom_bar, text="📄  Save as PDF",
+            fg_color="#2e7d32", text_color="#ffffff",
+            hover_color="#1b5e20", border_color="#388e3c", border_width=1,
+            font=ctk.CTkFont(size=15, weight="bold"),
+            corner_radius=0, width=220, height=46,
             command=self.do_pdf_print
-        ).pack(pady=5)
+        ).pack(side="left", padx=8, pady=12)
 
     def load_receipt(self, cart, receipt_no=None, back_to="inventory"):
         self._back_target = back_to
@@ -141,39 +142,38 @@ class ReceiptPage(ctk.CTkFrame):
         col = ctk.CTkFrame(self.card, fg_color="#222222", corner_radius=0, height=30)
         col.pack(fill="x", padx=10, pady=2)
         col.pack_propagate(False)
-        ctk.CTkLabel(col, text="DESCRIPTION",
-            font=ctk.CTkFont(size=11, weight="bold"),
-            text_color="#ffffff", width=170, anchor="w").pack(side="left", padx=5)
         ctk.CTkLabel(col, text="QTY",
             font=ctk.CTkFont(size=11, weight="bold"),
-            text_color="#ffffff", width=40, anchor="center").pack(side="left")
-        ctk.CTkLabel(col, text="UNIT",
+            text_color="#ffffff", width=35, anchor="w").pack(side="left", padx=5)
+        ctk.CTkLabel(col, text="DESCRIPTION",
             font=ctk.CTkFont(size=11, weight="bold"),
-            text_color="#ffffff", width=65, anchor="center").pack(side="left")
+            text_color="#ffffff", anchor="w").pack(side="left", padx=2, fill="x", expand=True)
         ctk.CTkLabel(col, text="AMOUNT",
             font=ctk.CTkFont(size=11, weight="bold"),
-            text_color="#ffffff", width=75, anchor="e").pack(side="right", padx=5)
+            text_color="#ffffff", width=80, anchor="e").pack(side="right", padx=5)
 
         # ── Items ─────────────────────────────────────────────
         total = 0
         for idx, item in enumerate(cart):
             amount = item["selling_price"] * item["quantity"]
             total += amount
+            qty = item["quantity"]
+            unit = item["selling_price"]
+            desc = item["item_name"]
+            if qty > 1:
+                desc = f"{item['item_name']} @₱{unit:.2f}"
             row_bg = "#f9f9f9" if idx % 2 == 0 else "#ffffff"
             row = ctk.CTkFrame(self.card, fg_color=row_bg, corner_radius=0)
             row.pack(fill="x", padx=10, pady=1)
-            ctk.CTkLabel(row, text=item["item_name"],
+            ctk.CTkLabel(row, text=str(qty),
                 font=ctk.CTkFont(size=11),
-                text_color="#000000", width=170, anchor="w").pack(side="left", padx=5)
-            ctk.CTkLabel(row, text=str(item["quantity"]),
+                text_color="#000000", width=35, anchor="w").pack(side="left", padx=5)
+            ctk.CTkLabel(row, text=desc,
                 font=ctk.CTkFont(size=11),
-                text_color="#000000", width=40, anchor="center").pack(side="left")
-            ctk.CTkLabel(row, text=f"₱{item['selling_price']:.2f}",
-                font=ctk.CTkFont(size=11),
-                text_color="#000000", width=65, anchor="center").pack(side="left")
+                text_color="#000000", anchor="w").pack(side="left", padx=2, fill="x", expand=True)
             ctk.CTkLabel(row, text=f"₱{amount:.2f}",
                 font=ctk.CTkFont(size=11),
-                text_color="#000000", width=75, anchor="e").pack(side="right", padx=5)
+                text_color="#000000", width=80, anchor="e").pack(side="right", padx=5)
 
         # ── Total ─────────────────────────────────────────────
         total_bg = ctk.CTkFrame(self.card, fg_color="#eeeeee", corner_radius=0, height=34)

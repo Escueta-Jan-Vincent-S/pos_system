@@ -77,13 +77,12 @@ def print_pdf(cart, receipt_no):
             c.setDash()
             y -= 8
 
-        def four_col(desc, qty, unit, amount, size=9, bold=False):
+        def three_col(qty, desc, amount, size=9, bold=False):
             nonlocal y
             font = "Helvetica-Bold" if bold else "Helvetica"
             c.setFont(font, size)
-            c.drawString(15, y, desc[:25])
-            c.drawCentredString(w * 0.52, y, str(qty))
-            c.drawCentredString(w * 0.68, y, unit)
+            c.drawString(15, y, str(qty))
+            c.drawString(36, y, desc[:24])
             c.drawRightString(w - 15, y, amount)
             y -= size + 5
 
@@ -119,9 +118,8 @@ def print_pdf(cart, receipt_no):
         c.rect(10, y - 13, w - 20, 17, fill=1, stroke=0)
         c.setFillColor(colors.white)
         c.setFont("Helvetica-Bold", 9)
-        c.drawString(16, y - 8, "DESCRIPTION")
-        c.drawCentredString(w * 0.52, y - 8, "QTY")
-        c.drawCentredString(w * 0.68, y - 8, "UNIT PRICE")
+        c.drawString(15, y - 8, "QTY")
+        c.drawString(36, y - 8, "DESCRIPTION")
         c.drawRightString(w - 15, y - 8, "AMOUNT")
         c.setFillColor(colors.black)
         y -= 20
@@ -132,16 +130,15 @@ def print_pdf(cart, receipt_no):
         for idx, item in enumerate(cart):
             amount = item["selling_price"] * item["quantity"]
             total += amount
+            qty = item["quantity"]
+            name = item["item_name"]
+            unit_price = item["selling_price"]
+            desc = f"{name} @P{unit_price:.2f}" if qty > 1 else name
             if idx % 2 == 0:
                 c.setFillColor(colors.HexColor("#f9f9f9"))
                 c.rect(10, y - 3, w - 20, 14, fill=1, stroke=0)
                 c.setFillColor(colors.black)
-            four_col(
-                item["item_name"],
-                str(item["quantity"]),
-                f"P{item['selling_price']:.2f}",
-                f"P{amount:.2f}"
-            )
+            three_col(qty, desc, f"P{amount:.2f}")
 
         dashed_line()
 
