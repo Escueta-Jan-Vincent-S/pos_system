@@ -90,7 +90,7 @@ class InventoryPage(ctk.CTkFrame):
 
         # Single scrollable frame — header at row 0, data from row 1 onward
         self.rows_frame = ctk.CTkScrollableFrame(
-            table_frame, fg_color="#000000", corner_radius=0)
+            table_frame, fg_color="#bbbbbb", corner_radius=0)
         self.rows_frame.pack(fill="both", expand=True)
 
         for i, w in enumerate(self._col_weights):
@@ -108,8 +108,7 @@ class InventoryPage(ctk.CTkFrame):
                 anchor=anchor,
                 justify="left" if anchor == "w" else "right" if anchor == "e" else "center",
                 padx=12 if anchor == "w" else 4
-            ).grid(row=0, column=i, sticky="nsew",
-                   padx=(1, 1), pady=0, ipady=10)
+            ).grid(row=0, column=i, sticky="nsew", padx=(0, 1), pady=(0, 1), ipady=10)
 
         self.load_items()
 
@@ -449,7 +448,7 @@ class InventoryPage(ctk.CTkFrame):
                     cursor="hand2",
                     padx=lbl_padx[0]
                 )
-                lbl.grid(row=row_num, column=j, sticky="nsew", padx=(1, 1), pady=0, ipady=8)
+                lbl.grid(row=row_num, column=j, sticky="nsew", padx=(0, 1), pady=(0, 1), ipady=8)
                 lbl.bind("<Button-1>", lambda e, b=barcode, rl=row_labels: self.select_row(b, rl))
                 row_labels.append(lbl)
 
