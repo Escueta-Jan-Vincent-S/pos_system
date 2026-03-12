@@ -177,6 +177,7 @@ class InventoryPage(ctk.CTkFrame):
 
         btn_configs = [
             ("ADD ITEM",      "#90EE90", "#000000", "#7dd67d", lambda: self.open_add_item()),
+            ("IMPORT EXCEL",  "#4488FF", "#ffffff", "#2266cc", lambda: self.open_import_excel()),
             ("REORDER TABLE", "#90EE90", "#000000", "#7dd67d", lambda: controller.navigate("reorder_table")),
             ("EDIT ITEM",     "#d3d3d3", "#000000", "#c0c0c0", lambda: self.open_edit_item()),
             ("DELETE ITEM",   "#FF4444", "#ffffff", "#cc0000", lambda: self.open_delete_confirm()),
@@ -507,6 +508,308 @@ class InventoryPage(ctk.CTkFrame):
         ctk.CTkButton(popup, text="OK", command=popup.destroy,
             fg_color="#d3d3d3", text_color="#000000",
             corner_radius=0, width=100).pack(pady=10)
+
+    # ─────────────────────────────────────────────────────────
+    # Import from Excel / CSV
+    # ─────────────────────────────────────────────────────────
+    def open_import_excel(self):
+        from tkinter import filedialog
+        import os
+
+        filepath = filedialog.askopenfilename(
+            title="Import Items from File",
+            filetypes=[
+                ("Excel / CSV files", "*.xlsx *.xls *.csv"),
+                ("Excel files", "*.xlsx *.xls"),
+                ("CSV files", "*.csv"),
+                ("All files", "*.*"),
+            ]
+        )
+        if not filepath:
+            return
+
+        ext = os.path.splitext(filepath)[1].lower()
+
+        try:
+            if ext in (".xlsx", ".xls"):
+                try:
+                    import openpyxl
+                except ImportError:
+                    self._warning("openpyxl is not installed.\nRun: pip install openpyxl")
+                    return
+
+                wb = openpyxl.load_workbook(filepath, data_only=True)
+                ws = wb.active
+
+                # Read all rows into a list
+                all_rows = list(ws.iter_rows(values_only=True))
+                if not all_rows:
+                    self._warning("The file appears to be empty.")
+                    return
+
+                # ── Auto-detect format ──────────────────────────────────────
+                # Horizontal pivot format: Row 0 has item names in many columns,
+                # Row 1 has prices, Row 2 has total demand.
+                # Simple vertical format: Row 0 is a header, data starts Row 1.
+
+                row0 = all_rows[0]
+                non_none_r0 = [c for c in row0 if c not in (None, "", " ")]
+
+                # Heuristic: if row 0 has more than 10 non-empty cells AND
+                # the first non-empty cell looks like a label (not a number),
+                # treat as horizontal pivot.
+                def _is_horizontal_pivot(r0):
+                    if len(non_none_r0) < 8:
+                        return False
+                    # If most non-None values in row0 are strings → pivot
+                    str_count = sum(1 for v in non_none_r0 if isinstance(v, str))
+                    return str_count >= len(non_none_r0) * 0.5
+
+                if _is_horizontal_pivot(row0):
+                    parsed_rows = self._parse_horizontal_excel(all_rows)
+                else:
+                    # Simple vertical format (original logic)
+                    parsed_rows = []
+                    for i, row in enumerate(all_rows):
+                        if i == 0:
+                            continue  # skip header
+                        parsed_rows.append(list(row))
+
+                self._show_import_preview(parsed_rows, filepath)
+
+            elif ext == ".csv":
+                import csv
+                parsed_rows = []
+                with open(filepath, newline="", encoding="utf-8-sig") as f:
+                    reader = csv.reader(f)
+                    next(reader, None)  # skip header
+                    for row in reader:
+                        parsed_rows.append(row)
+                self._show_import_preview(parsed_rows, filepath)
+
+        except Exception as e:
+            self._warning(f"Failed to read file:\n{str(e)}")
+
+    def _parse_horizontal_excel(self, all_rows):
+        """
+        Parse the horizontal pivot demand sheet used by this store.
+
+        Layout (0-indexed rows):
+          Row 0  → item names (category names appear as section separators, None = separator col)
+          Row 1  → selling prices  e.g. '₱ 9.00'
+          Row 2  → 2025 total demand values (floats)
+
+        Returns list of [item_name, category, unit_cost, selling_price, current_stock]
+        where unit_cost = 0 (not in file), current_stock = 0 (not in file).
+        """
+        import re
+
+        if len(all_rows) < 3:
+            return []
+
+        row_names   = all_rows[0]   # item names / category labels
+        row_prices  = all_rows[1]   # selling prices
+        row_demand  = all_rows[2]   # total demand (we use as a reference only, not stock)
+
+        parsed = []
+        current_category = ""
+
+        # Known category-header keywords (Row 0 cells that are category names, not items)
+        # We detect them by the fact that Row 1 (price) for that column is None.
+        for col_idx in range(len(row_names)):
+            cell_name   = row_names[col_idx]
+            cell_price  = row_prices[col_idx]  if col_idx < len(row_prices)  else None
+
+            # Skip completely empty columns
+            if cell_name is None or str(cell_name).strip() == "":
+                continue
+
+            name_str = str(cell_name).strip()
+
+            # If price cell is None/empty → this column is a category header
+            price_is_empty = (cell_price is None or str(cell_price).strip() == "")
+            if price_is_empty:
+                # Could be a category label like "Cigarettes", "Nestle", etc.
+                # Only treat as category if the name looks like a label (not a data keyword)
+                data_keywords = {
+                    "price", "2025 total demand", "total profit", "year 2025",
+                    "for standard dev.", "average daily demand", "total monthlly demand",
+                    "mean", "stanadard deviation", "demand tally sheet",
+                    "jan", "feb", "mar", "apr", "may", "jun",
+                    "jul", "aug", "sep", "oct", "nov", "dec",
+                    "january", "february", "march", "april", "june",
+                    "july", "august", "september", "october", "november", "december",
+                    "1st week", "2nd week", "3rd week", "4th week", "5th week",
+                    "total demand (2025)", "total demand checker (2025)",
+                }
+                if name_str.lower() not in data_keywords and not name_str.startswith("If "):
+                    current_category = name_str
+                continue
+
+            # Parse selling price — strip ₱ and spaces
+            selling_price = 0.0
+            if cell_price not in (None, ""):
+                price_str = re.sub(r"[₱,\s]", "", str(cell_price))
+                try:
+                    selling_price = float(price_str)
+                except ValueError:
+                    selling_price = 0.0
+
+            # Stock = 0 (not available in this file)
+            # Unit cost = 0 (not available in this file)
+            parsed.append([
+                name_str,           # item_name
+                current_category,   # category
+                0.0,                # unit_cost  (unknown)
+                selling_price,      # selling_price
+                0,                  # current_stock (unknown)
+            ])
+
+        return parsed
+
+    def _show_import_preview(self, rows, filepath):
+        import os
+        from database.database import add_item
+
+        popup = ctk.CTkToplevel(self)
+        popup.title("Import Preview")
+        popup.geometry("860x560")
+        popup.resizable(False, False)
+        popup.grab_set()
+        popup.lift()
+
+        ctk.CTkLabel(popup, text="📂  IMPORT FROM FILE",
+            font=ctk.CTkFont(size=18, weight="bold"),
+            text_color="#000000"
+        ).pack(pady=(12, 2))
+
+        ctk.CTkLabel(popup,
+            text=f"File: {os.path.basename(filepath)}   |   {len(rows)} row(s) found",
+            font=ctk.CTkFont(size=12), text_color="#555555"
+        ).pack()
+
+        ctk.CTkLabel(popup,
+            text="Supports standard column format OR horizontal demand sheet (auto-detected)",
+            font=ctk.CTkFont(size=12, slant="italic"), text_color="#1a5276"
+        ).pack(pady=(2, 6))
+
+        ctk.CTkFrame(popup, fg_color="#cccccc", height=1, corner_radius=0).pack(fill="x", padx=20)
+
+        # Preview table
+        cols = ["Item Name", "Category", "Unit Cost", "Selling Price", "Current Stock"]
+        tbl = ctk.CTkFrame(popup, fg_color="#000000", corner_radius=0)
+        tbl.pack(fill="both", expand=True, padx=20, pady=8)
+
+        hdr = ctk.CTkFrame(tbl, fg_color="#222222", corner_radius=0)
+        hdr.pack(fill="x")
+        for i, col in enumerate(cols):
+            hdr.grid_columnconfigure(i, weight=1, uniform="pcol")
+            ctk.CTkLabel(hdr, text=col,
+                font=ctk.CTkFont(size=13, weight="bold"),
+                text_color="#ffffff", justify="center"
+            ).grid(row=0, column=i, sticky="nsew", padx=1, pady=6)
+
+        scroll = ctk.CTkScrollableFrame(tbl, fg_color="#ffffff", corner_radius=0)
+        scroll.pack(fill="both", expand=True)
+        for i in range(5):
+            scroll.grid_columnconfigure(i, weight=1, uniform="pcol")
+
+        valid_rows = []
+        error_rows = []
+
+        for idx, row in enumerate(rows):
+            row = list(row) + [None] * 5
+            item_name     = str(row[0]).strip() if row[0] not in (None, "") else ""
+            category      = str(row[1]).strip() if row[1] not in (None, "") else ""
+            unit_cost_raw = row[2]
+            sell_raw      = row[3]
+            stock_raw     = row[4]
+
+            ok = True
+            try:
+                unit_cost     = float(unit_cost_raw)  if unit_cost_raw not in (None, "") else 0.0
+                selling_price = float(sell_raw)        if sell_raw      not in (None, "") else 0.0
+                current_stock = int(float(stock_raw))  if stock_raw     not in (None, "") else 0
+            except (ValueError, TypeError):
+                ok = False
+
+            if not item_name:
+                ok = False
+
+            bg     = "#f0f0f0" if idx % 2 == 0 else "#e8e8e8"
+            err_bg = "#ffe0e0"
+
+            display = [item_name or "⚠ EMPTY", category,
+                       str(unit_cost_raw), str(sell_raw), str(stock_raw)]
+
+            for j, val in enumerate(display):
+                ctk.CTkLabel(scroll, text=str(val),
+                    font=ctk.CTkFont(size=12),
+                    text_color="#000000" if ok else "#cc0000",
+                    fg_color=bg if ok else err_bg,
+                    justify="center"
+                ).grid(row=idx, column=j, sticky="nsew", padx=1, pady=4)
+
+            if ok:
+                valid_rows.append((item_name, category, unit_cost, selling_price, current_stock))
+            else:
+                error_rows.append(idx + 2)
+
+        summary = f"✅ {len(valid_rows)} valid row(s) ready to import"
+        if error_rows:
+            summary += f"   ⚠ {len(error_rows)} row(s) skipped (invalid data)"
+
+        ctk.CTkLabel(popup, text=summary,
+            font=ctk.CTkFont(size=13, weight="bold"),
+            text_color="#1a7a1a" if not error_rows else "#cc5500"
+        ).pack(pady=4)
+
+        btn_row = ctk.CTkFrame(popup, fg_color="transparent")
+        btn_row.pack(pady=8)
+
+        def do_import():
+            imported = 0
+            for item_name, category, unit_cost, selling_price, current_stock in valid_rows:
+                try:
+                    add_item(item_name, category, unit_cost, selling_price, current_stock)
+                    imported += 1
+                except Exception:
+                    pass
+            popup.destroy()
+            self.load_items()
+
+            done = ctk.CTkToplevel(self)
+            done.title("Import Complete")
+            done.geometry("340x140")
+            done.resizable(False, False)
+            done.grab_set()
+            done.lift()
+            ctk.CTkLabel(done,
+                text=f"✅ Successfully imported {imported} item(s)!",
+                font=ctk.CTkFont(size=14, weight="bold"),
+                text_color="#000000", justify="center"
+            ).pack(expand=True)
+            ctk.CTkButton(done, text="OK", command=done.destroy,
+                fg_color="#90EE90", text_color="#000000",
+                corner_radius=0, width=100
+            ).pack(pady=10)
+
+        ctk.CTkButton(btn_row, text="IMPORT",
+            fg_color="#4488FF", text_color="#ffffff",
+            hover_color="#2266cc", border_color="#000000", border_width=2,
+            font=ctk.CTkFont(size=15, weight="bold"),
+            corner_radius=0, width=160, height=42,
+            state="normal" if valid_rows else "disabled",
+            command=do_import
+        ).pack(side="left", padx=10)
+
+        ctk.CTkButton(btn_row, text="CANCEL",
+            fg_color="#d3d3d3", text_color="#000000",
+            hover_color="#c0c0c0", border_color="#000000", border_width=2,
+            font=ctk.CTkFont(size=15, weight="bold"),
+            corner_radius=0, width=160, height=42,
+            command=popup.destroy
+        ).pack(side="left", padx=10)
 
     # ─────────────────────────────────────────────────────────
     # Add / Edit / Delete Item dialogs
