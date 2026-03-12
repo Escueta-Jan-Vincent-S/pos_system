@@ -2,6 +2,9 @@ import customtkinter as ctk
 from controllers import controller
 from controllers.user_controller import get_accounts, on_switch_account
 
+ADMIN_PASSWORD = "pogiako123"
+
+
 class UserPage(ctk.CTkFrame):
     def __init__(self, master):
         super().__init__(master, fg_color="#ffffff", corner_radius=0)
@@ -11,13 +14,14 @@ class UserPage(ctk.CTkFrame):
         header.pack(fill="x", side="top")
         header.pack_propagate(False)
 
-        ctk.CTkButton(
+        self.back_btn = ctk.CTkButton(
             header, text="<", fg_color="transparent",
             text_color="#000000", hover_color="#707070",
             font=ctk.CTkFont(size=70, weight="bold"),
             corner_radius=0, width=50, height=50,
             command=lambda: controller.navigate("dashboard")
-        ).pack(side="left", padx=10)
+        )
+        self.back_btn.pack(side="left", padx=10)
 
         ctk.CTkLabel(
             header, text="USER",
@@ -52,7 +56,7 @@ class UserPage(ctk.CTkFrame):
         self.load_accounts()
 
     def load_accounts(self):
-        # Clear list
+        # Alias for show_page compatibility
         for widget in self.account_list.winfo_children():
             widget.destroy()
 
@@ -68,7 +72,6 @@ class UserPage(ctk.CTkFrame):
                 text_color="#000000"
             ).pack(side="left")
 
-            # Admin label
             # Role label
             if role == "admin":
                 ctk.CTkLabel(
@@ -78,12 +81,12 @@ class UserPage(ctk.CTkFrame):
                 ).pack(side="right", padx=10)
             else:
                 ctk.CTkLabel(
-                    row, text="GUEST",
+                    row, text="STAFF",
                     font=ctk.CTkFont(size=30, weight="bold"),
                     text_color="#808080"
                 ).pack(side="right", padx=10)
 
-            # Current or Switch button
+            # Current label or Login button
             if is_current:
                 ctk.CTkLabel(
                     row, text="Current",
@@ -98,5 +101,83 @@ class UserPage(ctk.CTkFrame):
                     text_color="#000000",
                     hover_color="#f0f0f0",
                     width=60,
-                    command=lambda aid=account_id: on_switch_account(aid, self.load_accounts)
+                    command=lambda aid=account_id, r=role: self._handle_login(aid, r)
                 ).pack(side="right", padx=120)
+
+    # Alias so show_page() triggers a refresh
+    def load_items(self):
+        self.load_accounts()
+
+    # ── Login logic ──────────────────────────────────────────
+    def _handle_login(self, account_id, role):
+        if role == "admin":
+            self._show_password_popup(account_id)
+        else:
+            # Staff — direct login, no password
+            self._complete_login(account_id, "staff")
+
+    def _show_password_popup(self, account_id):
+        popup = ctk.CTkToplevel(self)
+        popup.title("Admin Login")
+        popup.geometry("420x280")
+        popup.resizable(False, False)
+        popup.grab_set()
+        popup.lift()
+
+        ctk.CTkLabel(
+            popup, text="👑  ADMIN LOGIN",
+            font=ctk.CTkFont(size=22, weight="bold"),
+            text_color="#000000"
+        ).pack(pady=(25, 10))
+
+        ctk.CTkLabel(
+            popup, text="Enter password to continue:",
+            font=ctk.CTkFont(size=15),
+            text_color="#555555"
+        ).pack()
+
+        pw_entry = ctk.CTkEntry(
+            popup, width=300, height=45,
+            font=ctk.CTkFont(size=18),
+            show="●", placeholder_text="Password"
+        )
+        pw_entry.pack(pady=15)
+        pw_entry.focus()
+
+        error_label = ctk.CTkLabel(
+            popup, text="",
+            font=ctk.CTkFont(size=13),
+            text_color="#FF4444"
+        )
+        error_label.pack()
+
+        def attempt_login(event=None):
+            entered = pw_entry.get()
+            if entered == ADMIN_PASSWORD:
+                popup.destroy()
+                self._complete_login(account_id, "admin")
+            else:
+                error_label.configure(text="❌  Incorrect password. Try again.")
+                pw_entry.delete(0, "end")
+                pw_entry.focus()
+
+        pw_entry.bind("<Return>", attempt_login)
+
+        ctk.CTkButton(
+            popup, text="LOGIN",
+            fg_color="#90EE90", text_color="#000000",
+            hover_color="#7dd67d", border_color="#000000", border_width=2,
+            font=ctk.CTkFont(size=16, weight="bold"),
+            corner_radius=0, width=300, height=45,
+            command=attempt_login
+        ).pack(pady=(5, 0))
+
+    def _complete_login(self, account_id, role):
+        # Update DB current account
+        on_switch_account(account_id, self.load_accounts)
+
+        # Set role in controller
+        controller.set_role(role)
+
+        # Navigate to dashboard and refresh its role UI
+        controller.navigate("dashboard")

@@ -31,6 +31,18 @@ class DashboardPage(ctk.CTkFrame):
         sidebar = ctk.CTkFrame(body, fg_color="#ffffff", corner_radius=0, width=500)
         sidebar.pack(side="left", fill="y", padx=(0, 15))
         sidebar.pack_propagate(False)
+        sidebar.grid_columnconfigure(0, weight=1)
+
+        # ── Role badge ────────────────────────────────────────
+        self.role_badge = ctk.CTkLabel(
+            sidebar, text="🧑 Staff",
+            font=ctk.CTkFont(size=22, weight="bold"),
+            text_color="#555555",
+            fg_color="#f0f0f0",
+            corner_radius=6,
+            height=40
+        )
+        self.role_badge.pack(fill="x", pady=(0, 8), padx=2)
 
         btn_configs = [
             ("INVENTORY", "#ffffff", "#000000", "#e0e0e0", on_inventory_click),
@@ -41,14 +53,15 @@ class DashboardPage(ctk.CTkFrame):
         ]
 
         for text, bg, fg, hover, cmd in btn_configs:
-            ctk.CTkButton(
+            btn = ctk.CTkButton(
                 sidebar, text=text,
                 fg_color=bg, text_color=fg, hover_color=hover,
                 border_color="#000000", border_width=2,
                 font=ctk.CTkFont(size=50, weight="bold"),
-                corner_radius=0, width=500, height=136,
+                corner_radius=0, width=500, height=120,
                 command=cmd
-            ).pack(fill="x", pady=6)
+            )
+            btn.pack(fill="x", pady=6)
 
         # ── MIDDLE: Stats + Pie chart ─────────────────────────
         middle = ctk.CTkFrame(body, fg_color="#ffffff", corner_radius=0)
@@ -121,6 +134,18 @@ class DashboardPage(ctk.CTkFrame):
         self._load_stats()
         self._load_pie_chart()
         self._load_rop_items()
+        self.refresh_role_ui()
+
+    def refresh_role_ui(self):
+        from controllers.controller import is_admin
+
+        if is_admin():
+            self.role_badge.configure(text="👑 Admin", text_color="#2c7a2c")
+        else:
+            self.role_badge.configure(text="🧑 Staff", text_color="#555555")
+
+        # INVENTORY button is always visible — staff can access it
+        # but admin-only actions are hidden inside the inventory page itself
 
     def _load_stats(self):
         from database.database import get_all_items
@@ -208,7 +233,6 @@ class DashboardPage(ctk.CTkFrame):
                 fill=color, outline="#ffffff", width=2
             )
 
-            # Midpoint angle in standard math radians (counter-clockwise from east)
             mid_deg   = start_angle + sweep / 2
             mid_rad   = math.radians(mid_deg)
             label_r   = r * 0.62
@@ -223,7 +247,7 @@ class DashboardPage(ctk.CTkFrame):
             )
             start_angle += sweep
 
-        # ── Legend (right of pie) ──────────────────────────────
+        # ── Legend ────────────────────────────────────────────
         legend = ctk.CTkFrame(self.chart_frame, fg_color="#f0f0f0", corner_radius=0)
         legend.pack(side="left", padx=20, pady=10, anchor="center")
 
@@ -234,7 +258,6 @@ class DashboardPage(ctk.CTkFrame):
             row = ctk.CTkFrame(legend, fg_color="transparent")
             row.pack(anchor="w", pady=8)
 
-            # Color swatch
             ctk.CTkFrame(row, fg_color=color_map[cls],
                 width=22, height=22, corner_radius=4
             ).pack(side="left", padx=(0, 8))
@@ -284,7 +307,6 @@ class DashboardPage(ctk.CTkFrame):
                 text_color="#000000", anchor="w", width=120, wraplength=115
             ).pack(side="left")
 
-            # Progress bar (stock / max_level)
             bar_bg = ctk.CTkFrame(row, fg_color="#dddddd", corner_radius=4, height=18, width=120)
             bar_bg.pack(side="left", padx=(5, 0))
             bar_bg.pack_propagate(False)
@@ -292,7 +314,6 @@ class DashboardPage(ctk.CTkFrame):
             fill_pct = min(stock / max_level, 1.0) if max_level > 0 else 0
             fill_w   = max(int(fill_pct * 120), 4)
 
-            # Color: red if critical, orange if reorder
             from database.database import get_connection as gc
             cn = gc(); cr = cn.cursor()
             cr.execute("SELECT safety_stock FROM items WHERE item_name=?", (item_name,))

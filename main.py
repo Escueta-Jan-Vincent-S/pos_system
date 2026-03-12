@@ -35,6 +35,13 @@ class App(ctk.CTk):
 
         controller.init(self)
 
+        # Set role based on whoever is marked is_current in the DB
+        from database.database import get_all_accounts
+        for _, _, role, is_current in get_all_accounts():
+            if is_current:
+                controller.set_role(role)
+                break
+
         from views.dashboard import DashboardPage
         from views.user import UserPage
         from views.inventory import InventoryPage
@@ -62,7 +69,7 @@ class App(ctk.CTk):
         self.reorder_computation_page.grid(row=0, column=0, sticky="nsew")
         self.receipt_page.grid(row=0, column=0, sticky="nsew")
 
-        self.show_page("dashboard")
+        self.show_page("user")
 
         # ── Global barcode scanner listener ───────────────────
         self._scan_buffer = ""

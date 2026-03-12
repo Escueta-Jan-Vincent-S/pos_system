@@ -175,6 +175,10 @@ class InventoryPage(ctk.CTkFrame):
         btn_frame.pack(fill="x", padx=10, pady=10)
         btn_frame.pack_propagate(False)
 
+        # Admin-only buttons wrapped in a frame so they can be hidden for staff
+        self.admin_btn_frame = ctk.CTkFrame(btn_frame, fg_color="transparent", corner_radius=0)
+        self.admin_btn_frame.pack(side="left", fill="x", expand=True)
+
         btn_configs = [
             ("ADD ITEM",      "#90EE90", "#000000", "#7dd67d", lambda: self.open_add_item()),
             ("IMPORT EXCEL",  "#4488FF", "#ffffff", "#2266cc", lambda: self.open_import_excel()),
@@ -185,13 +189,13 @@ class InventoryPage(ctk.CTkFrame):
 
         for text, bg, fg, hover, cmd in btn_configs:
             ctk.CTkButton(
-                btn_frame, text=text, fg_color=bg, text_color=fg,
+                self.admin_btn_frame, text=text, fg_color=bg, text_color=fg,
                 hover_color=hover, border_color="#000000", border_width=2,
                 font=ctk.CTkFont(size=26, weight="bold"),
                 corner_radius=0, height=60, command=cmd
             ).pack(side="left", padx=5, expand=True, fill="x")
 
-        # DAILY ▼ → replaced with calendar date filter button
+        # 📅 FILTER DATE — always visible for both Admin and Staff
         ctk.CTkButton(
             btn_frame, text="📅 FILTER DATE",
             fg_color="#d3d3d3", text_color="#000000",
@@ -354,7 +358,21 @@ class InventoryPage(ctk.CTkFrame):
     # ─────────────────────────────────────────────────────────
     # Load Items — uses demand_log for the Demand column
     # ─────────────────────────────────────────────────────────
+    # ─────────────────────────────────────────────────────────
+    # Role UI — show/hide admin-only buttons
+    # ─────────────────────────────────────────────────────────
+    def refresh_role_ui(self):
+        if not hasattr(self, "admin_btn_frame"):
+            return
+        from controllers.controller import is_admin
+        if is_admin():
+            self.admin_btn_frame.pack(side="left", fill="x", expand=True)
+        else:
+            self.admin_btn_frame.pack_forget()
+
     def load_items(self):
+        self.refresh_role_ui()
+
         for widget in self.rows_frame.winfo_children():
             widget.destroy()
 

@@ -21,7 +21,7 @@ def initialize_db():
         CREATE TABLE IF NOT EXISTS accounts (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             email TEXT NOT NULL UNIQUE,
-            role TEXT NOT NULL DEFAULT 'student',
+            role TEXT NOT NULL DEFAULT 'staff',
             is_current INTEGER NOT NULL DEFAULT 0
         )
     """)
@@ -107,7 +107,7 @@ def initialize_db():
     """)
     cursor.execute("""
         INSERT OR IGNORE INTO accounts (email, role, is_current)
-        VALUES ('student@gmail.com', 'student', 0)
+        VALUES ('staff@gmail.com', 'staff', 0)
     """)
 
     conn.commit()
