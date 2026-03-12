@@ -109,7 +109,7 @@ class InventoryPage(ctk.CTkFrame):
                 justify="left" if anchor == "w" else "right" if anchor == "e" else "center",
                 padx=12 if anchor == "w" else 4
             ).grid(row=0, column=i, sticky="nsew",
-                   padx=(0, 1 if i < len(columns)-1 else 0), pady=0, ipady=10)
+                   padx=(1, 1), pady=0, ipady=10)
 
         self.load_items()
 
@@ -449,7 +449,7 @@ class InventoryPage(ctk.CTkFrame):
                     cursor="hand2",
                     padx=lbl_padx[0]
                 )
-                lbl.grid(row=row_num, column=j, sticky="nsew", padx=(0, 1 if j < len(display_data)-1 else 0), pady=0, ipady=8)
+                lbl.grid(row=row_num, column=j, sticky="nsew", padx=(1, 1), pady=0, ipady=8)
                 lbl.bind("<Button-1>", lambda e, b=barcode, rl=row_labels: self.select_row(b, rl))
                 row_labels.append(lbl)
 
