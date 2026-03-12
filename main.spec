@@ -79,7 +79,7 @@ exe = EXE(
     a.binaries,
     a.datas,
     [],
-    name='POS_System',
+    name='L&L Inventory Management System',
     debug=False,
     bootloader_ignore_signals=False,
     strip=False,
