@@ -425,3 +425,66 @@ def update_weekly_demand_from_timeframe(timeframe):
     conn.commit()
     conn.close()
     return updated
+
+def get_items_with_demand(start_date=None, end_date=None):
+    """
+    Returns items list with demand from demand_log for a date range.
+    If no dates given, returns all-time cumulative demand.
+    Columns: barcode, item_name, category, unit_cost, selling_price,
+             current_stock, demand, classification, status
+    """
+    conn = get_connection()
+    cursor = conn.cursor()
+    if start_date and end_date:
+        cursor.execute("""
+            SELECT i.barcode, i.item_name, i.category, i.unit_cost, i.selling_price,
+                   i.current_stock, COALESCE(SUM(d.qty), 0) as demand,
+                   i.classification, i.status
+            FROM items i
+            LEFT JOIN demand_log d ON i.barcode = d.barcode
+                AND d.log_date BETWEEN ? AND ?
+            GROUP BY i.barcode
+            ORDER BY i.barcode
+        """, (start_date, end_date))
+    else:
+        cursor.execute("""
+            SELECT i.barcode, i.item_name, i.category, i.unit_cost, i.selling_price,
+                   i.current_stock, COALESCE(SUM(d.qty), 0) as demand,
+                   i.classification, i.status
+            FROM items i
+            LEFT JOIN demand_log d ON i.barcode = d.barcode
+            GROUP BY i.barcode
+            ORDER BY i.barcode
+        """)
+    rows = cursor.fetchall()
+    conn.close()
+    return rows
+
+
+def update_classifications_by_demand_qty():
+    """
+    ABC classification based on CUMULATIVE demand quantity thresholds:
+      A = demand > 200
+      B = demand 91 to 200
+      C = demand 90 and below (including 0)
+    """
+    conn = get_connection()
+    cursor = conn.cursor()
+    # Get cumulative demand per item
+    cursor.execute("""
+        SELECT i.barcode, COALESCE(SUM(d.qty), 0) as total_demand
+        FROM items i
+        LEFT JOIN demand_log d ON i.barcode = d.barcode
+        GROUP BY i.barcode
+    """)
+    rows = cursor.fetchall()
+    for barcode, demand in rows:
+        if demand > 200:
+            cls = "A"
+        elif demand >= 91:
+            cls = "B"
+        else:
+            cls = "C"
+        cursor.execute("UPDATE items SET classification=? WHERE barcode=?", (cls, barcode))
+    conn.commit()
+    conn.close()
