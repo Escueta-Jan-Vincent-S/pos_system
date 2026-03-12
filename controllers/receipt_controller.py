@@ -216,7 +216,7 @@ def print_usb(cart, receipt_no):
         printer.text("=" * 32 + "\n")
 
         printer.set(align="left", bold=True)
-        printer.text(f"{'DESCRIPTION':<16}{'QTY':^5}{'UNIT':>6}{'AMT':>5}\n")
+        printer.text(f"{'QTY':<4}{'DESCRIPTION':<20}{'AMOUNT':>8}\n")
         printer.text("-" * 32 + "\n")
 
         total = 0
@@ -224,11 +224,19 @@ def print_usb(cart, receipt_no):
         for item in cart:
             amount = item["selling_price"] * item["quantity"]
             total += amount
-            name = item["item_name"][:14]
-            printer.text(
-                f"{name:<16}{item['quantity']:^5}"
-                f"P{item['selling_price']:>5.0f}P{amount:>4.0f}\n"
-            )
+            qty        = item["quantity"]
+            name       = item["item_name"]
+            unit       = item["selling_price"]
+            qty_str    = str(qty)
+            amount_str = f"P{amount:.2f}"
+
+            if qty > 1:
+                tag  = f"@{unit:.2f}"
+                desc = f"{name[:13]} {tag}"
+            else:
+                desc = name[:20]
+
+            printer.text(f"{qty_str:<4}{desc:<20}{amount_str:>8}\n")
 
         printer.text("-" * 32 + "\n")
         printer.set(bold=True)
