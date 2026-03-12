@@ -8,3 +8,8 @@
 2. Create a desktop shortcut that always runs as Admin:
 - Right-click POS_System.exe → Send to → Desktop (create shortcut)
 - Right-click the shortcut → Properties → Advanced → check "Run as Administrator" → OK
+
+NOTE:
+- Always run the shortcut as Admin to ensure the printer works correctly.
+- If you encounter any issues with the printer, try reinstalling the driver using Zadig.
+- Set Scale into 100% for best display results.

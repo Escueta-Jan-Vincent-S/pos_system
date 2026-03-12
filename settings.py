@@ -1,6 +1,6 @@
 # App Info
-APP_NAME = "Di pa alam"
-APP_VERSION = "1.0.4"
+APP_NAME = "LANZ N LINDLY"
+APP_VERSION = "1.0.9"
 
 # Window Size
 WINDOW_WIDTH = 1920
