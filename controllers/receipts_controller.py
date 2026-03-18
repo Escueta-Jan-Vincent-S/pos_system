@@ -7,9 +7,9 @@ class ReceiptsController:
         self.page = page
         self.selected_receipt_no = None
 
-    def load_all(self):
+    def load_all(self, start_date=None, end_date=None):
         """Return list of (date, time, receipt_no, total, is_paid) for the table."""
-        return get_all_receipts()
+        return get_all_receipts(start_date, end_date)
 
     def select(self, receipt_no):
         self.selected_receipt_no = receipt_no

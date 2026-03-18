@@ -244,10 +244,20 @@ def mark_receipt_paid(receipt_no, cash, change_amount):
     conn.commit()
     conn.close()
 
-def get_all_receipts():
+def get_all_receipts(start_date=None, end_date=None):
     conn = get_connection()
     cursor = conn.cursor()
-    cursor.execute("SELECT date, time, receipt_no, total, is_paid FROM receipts ORDER BY id DESC")
+    # receipts.date is stored as MM/DD/YY — convert for comparison
+    if start_date and end_date:
+        cursor.execute("""
+            SELECT date, time, receipt_no, total, is_paid FROM receipts
+            WHERE strftime('%Y-%m-%d',
+                '20'||substr(date,7,2)||'-'||substr(date,1,2)||'-'||substr(date,4,2))
+                BETWEEN ? AND ?
+            ORDER BY id DESC
+        """, (start_date, end_date))
+    else:
+        cursor.execute("SELECT date, time, receipt_no, total, is_paid FROM receipts ORDER BY id DESC")
     rows = cursor.fetchall()
     conn.close()
     return rows
