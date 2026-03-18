@@ -1,8 +1,30 @@
 import customtkinter as ctk
 from controllers import controller
 from controllers.user_controller import get_accounts, on_switch_account
+import os, sys
 
-ADMIN_PASSWORD = "pogiako123"
+def _get_config_path():
+    if getattr(sys, 'frozen', False):
+        base = os.path.dirname(sys.executable)
+    else:
+        base = os.path.dirname(os.path.abspath(__file__))
+    return os.path.join(base, "config.ini")
+
+def _load_password():
+    path = _get_config_path()
+    if os.path.exists(path):
+        with open(path, "r") as f:
+            for line in f:
+                if line.startswith("admin_password="):
+                    return line.strip().split("=", 1)[1]
+    return "pogiako123"
+
+def _save_password(new_pw):
+    path = _get_config_path()
+    with open(path, "w") as f:
+        f.write(f"admin_password={new_pw}\n")
+
+ADMIN_PASSWORD = _load_password()
 
 
 class UserPage(ctk.CTkFrame):
@@ -52,6 +74,17 @@ class UserPage(ctk.CTkFrame):
         # Account list
         self.account_list = ctk.CTkFrame(card, fg_color="#ffffff", corner_radius=0)
         self.account_list.pack(fill="x", padx=20, pady=10)
+
+        # Change password button
+        ctk.CTkFrame(card, fg_color="#e0e0e0", height=1, corner_radius=0).pack(fill="x", padx=20, pady=(10, 0))
+        ctk.CTkButton(
+            card, text="🔑  Change Admin Password",
+            fg_color="transparent", text_color="#555555",
+            hover_color="#f0f0f0",
+            font=ctk.CTkFont(size=18),
+            corner_radius=0, height=45,
+            command=self._show_change_password
+        ).pack(fill="x", padx=20, pady=5)
 
         self.load_accounts()
 
@@ -181,3 +214,93 @@ class UserPage(ctk.CTkFrame):
 
         # Navigate to dashboard and refresh its role UI
         controller.navigate("dashboard")
+
+    # ── Change Password ──────────────────────────────────────
+    def _show_change_password(self):
+        popup = ctk.CTkToplevel(self)
+        popup.title("Change Admin Password")
+        popup.geometry("420x420")
+        popup.resizable(False, False)
+        popup.grab_set()
+        popup.lift()
+
+        ctk.CTkLabel(popup, text="🔑  CHANGE ADMIN PASSWORD",
+            font=ctk.CTkFont(size=18, weight="bold"),
+            text_color="#000000"
+        ).pack(pady=(25, 5))
+
+        ctk.CTkLabel(popup, text="Enter current password first to confirm.",
+            font=ctk.CTkFont(size=13), text_color="#555555"
+        ).pack(pady=(0, 15))
+
+        form = ctk.CTkFrame(popup, fg_color="transparent")
+        form.pack(padx=30, fill="x")
+
+        ctk.CTkLabel(form, text="Current Password",
+            font=ctk.CTkFont(size=13), text_color="#000000", anchor="w"
+        ).pack(fill="x", pady=(0, 2))
+        current_entry = ctk.CTkEntry(form, width=360, height=38,
+            font=ctk.CTkFont(size=15), show="●")
+        current_entry.pack(fill="x")
+
+        ctk.CTkLabel(form, text="New Password",
+            font=ctk.CTkFont(size=13), text_color="#000000", anchor="w"
+        ).pack(fill="x", pady=(12, 2))
+        new_entry = ctk.CTkEntry(form, width=360, height=38,
+            font=ctk.CTkFont(size=15), show="●")
+        new_entry.pack(fill="x")
+
+        ctk.CTkLabel(form, text="Confirm New Password",
+            font=ctk.CTkFont(size=13), text_color="#000000", anchor="w"
+        ).pack(fill="x", pady=(12, 2))
+        confirm_entry = ctk.CTkEntry(form, width=360, height=38,
+            font=ctk.CTkFont(size=15), show="●")
+        confirm_entry.pack(fill="x")
+
+        error_label = ctk.CTkLabel(popup, text="",
+            font=ctk.CTkFont(size=13), text_color="#FF4444"
+        )
+        error_label.pack(pady=(8, 0))
+
+        def save():
+            global ADMIN_PASSWORD
+            current = current_entry.get()
+            new_pw  = new_entry.get()
+            confirm = confirm_entry.get()
+
+            if current != ADMIN_PASSWORD:
+                error_label.configure(text="❌ Current password is incorrect.")
+                return
+            if not new_pw:
+                error_label.configure(text="❌ New password cannot be empty.")
+                return
+            if new_pw != confirm:
+                error_label.configure(text="❌ New passwords do not match.")
+                return
+
+            ADMIN_PASSWORD = new_pw
+            _save_password(new_pw)
+            popup.destroy()
+
+            done = ctk.CTkToplevel(self)
+            done.title("Success")
+            done.geometry("320x140")
+            done.resizable(False, False)
+            done.grab_set()
+            done.lift()
+            ctk.CTkLabel(done, text="✅ Password changed successfully!",
+                font=ctk.CTkFont(size=14, weight="bold"),
+                text_color="#000000"
+            ).pack(expand=True)
+            ctk.CTkButton(done, text="OK", command=done.destroy,
+                fg_color="#90EE90", text_color="#000000",
+                corner_radius=0, width=100
+            ).pack(pady=10)
+
+        ctk.CTkButton(popup, text="SAVE NEW PASSWORD",
+            fg_color="#90EE90", text_color="#000000",
+            hover_color="#7dd67d", border_color="#000000", border_width=2,
+            font=ctk.CTkFont(size=15, weight="bold"),
+            corner_radius=0, width=360, height=42,
+            command=save
+        ).pack(padx=30, pady=(5, 0))

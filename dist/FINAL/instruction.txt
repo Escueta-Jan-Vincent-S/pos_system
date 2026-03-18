@@ -1,5 +1,5 @@
 APP NAME: Lanz N Lindly
-Version: 1.1.0
+Version: 1.1.2
 
 1. Install Zadig (for the printer driver — one time only):
 - Download from https://zadig.akeo.ie
