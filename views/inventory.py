@@ -871,7 +871,7 @@ class InventoryPage(ctk.CTkFrame):
         from database.database import get_next_barcode, get_all_items
         popup = ctk.CTkToplevel(self)
         popup.title("Add Item")
-        popup.geometry("500x550")
+        popup.geometry("500x620")
         popup.resizable(False, False)
         popup.grab_set()
 
@@ -915,6 +915,31 @@ class InventoryPage(ctk.CTkFrame):
             entry.pack(padx=30)
             entries[field] = entry
 
+        # Product Barcode (optional)
+        ctk.CTkLabel(popup, text="Product Barcode (optional — scan or type real barcode)",
+            font=ctk.CTkFont(size=14)).pack(anchor="w", padx=30, pady=(10, 0))
+        entries["Product Barcode"] = ctk.CTkEntry(popup, width=440, height=35,
+            placeholder_text="Scan the product or type barcode here...")
+        entries["Product Barcode"].pack(padx=30)
+
+        # Auto-fill product barcode when scanner fires while popup is open
+        _scan_buf = []
+        _scan_timer = [None]
+        def _on_key(event):
+            if _scan_timer[0]:
+                popup.after_cancel(_scan_timer[0])
+                _scan_timer[0] = None
+            if event.keysym == "Return":
+                scanned = "".join(_scan_buf).strip()
+                _scan_buf.clear()
+                if scanned:
+                    entries["Product Barcode"].delete(0, "end")
+                    entries["Product Barcode"].insert(0, scanned)
+            elif event.char and event.char.isprintable():
+                _scan_buf.append(event.char)
+                _scan_timer[0] = popup.after(300, _scan_buf.clear)
+        popup.bind("<Key>", _on_key)
+
         def save():
             cat_val = cat_var.get() if categories else entries["Category"].get()
             on_add_item(
@@ -923,6 +948,7 @@ class InventoryPage(ctk.CTkFrame):
                 entries["Unit Cost"].get(),
                 entries["Selling Price"].get(),
                 entries["Current Stock"].get(),
+                entries["Product Barcode"].get().strip(),
             )
             popup.destroy()
             self.load_items()
@@ -945,7 +971,7 @@ class InventoryPage(ctk.CTkFrame):
 
         popup = ctk.CTkToplevel(self)
         popup.title("Edit Item")
-        popup.geometry("500x550")
+        popup.geometry("500x620")
         popup.resizable(False, False)
         popup.grab_set()
 
@@ -992,6 +1018,34 @@ class InventoryPage(ctk.CTkFrame):
             entry.pack(padx=30)
             entries[field] = entry
 
+        # Product Barcode (optional)
+        ctk.CTkLabel(popup, text="Product Barcode (optional — scan or type real barcode)",
+            font=ctk.CTkFont(size=14)).pack(anchor="w", padx=30, pady=(10, 0))
+        entries["Product Barcode"] = ctk.CTkEntry(popup, width=440, height=35,
+            placeholder_text="Scan the product or type barcode here...")
+        # Pre-fill existing product barcode if available (index 14)
+        existing_pb = item[14] if len(item) > 14 and item[14] else ""
+        entries["Product Barcode"].insert(0, existing_pb)
+        entries["Product Barcode"].pack(padx=30)
+
+        # Auto-fill product barcode when scanner fires while popup is open
+        _scan_buf = []
+        _scan_timer = [None]
+        def _on_key(event):
+            if _scan_timer[0]:
+                popup.after_cancel(_scan_timer[0])
+                _scan_timer[0] = None
+            if event.keysym == "Return":
+                scanned = "".join(_scan_buf).strip()
+                _scan_buf.clear()
+                if scanned:
+                    entries["Product Barcode"].delete(0, "end")
+                    entries["Product Barcode"].insert(0, scanned)
+            elif event.char and event.char.isprintable():
+                _scan_buf.append(event.char)
+                _scan_timer[0] = popup.after(300, _scan_buf.clear)
+        popup.bind("<Key>", _on_key)
+
         def save():
             cat_val = cat_var.get() if categories else entries["Category"].get()
             on_edit_item(
@@ -1001,6 +1055,7 @@ class InventoryPage(ctk.CTkFrame):
                 entries["Unit Cost"].get(),
                 entries["Selling Price"].get(),
                 entries["Current Stock"].get(),
+                entries["Product Barcode"].get().strip(),
             )
             popup.destroy()
             self.load_items()

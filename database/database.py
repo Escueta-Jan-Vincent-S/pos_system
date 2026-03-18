@@ -53,7 +53,8 @@ def initialize_db():
         "min_level REAL DEFAULT 0",
         "max_level REAL DEFAULT 0",
         "status TEXT DEFAULT ''",
-        "classification TEXT DEFAULT ''"
+        "classification TEXT DEFAULT ''",
+        "product_barcode TEXT DEFAULT ''"
     ]:
         try:
             cursor.execute(f"ALTER TABLE items ADD COLUMN {col}")
@@ -137,14 +138,14 @@ def get_next_barcode():
     conn.close()
     return str((result or 1000) + 1)
 
-def add_item(item_name, category, unit_cost, selling_price, current_stock):
+def add_item(item_name, category, unit_cost, selling_price, current_stock, product_barcode=""):
     conn = get_connection()
     cursor = conn.cursor()
     barcode = get_next_barcode()
     cursor.execute("""
-        INSERT INTO items (barcode, item_name, category, unit_cost, selling_price, current_stock)
-        VALUES (?, ?, ?, ?, ?, ?)
-    """, (barcode, item_name, category, unit_cost, selling_price, current_stock))
+        INSERT INTO items (barcode, item_name, category, unit_cost, selling_price, current_stock, product_barcode)
+        VALUES (?, ?, ?, ?, ?, ?, ?)
+    """, (barcode, item_name, category, unit_cost, selling_price, current_stock, product_barcode))
     conn.commit()
     conn.close()
 
@@ -178,21 +179,22 @@ def delete_item(barcode):
     conn.commit()
     conn.close()
 
-def update_item(barcode, item_name, category, unit_cost, selling_price, current_stock):
+def update_item(barcode, item_name, category, unit_cost, selling_price, current_stock, product_barcode=None):
     conn = get_connection()
     cursor = conn.cursor()
     cursor.execute("""
         UPDATE items
-        SET item_name=?, category=?, unit_cost=?, selling_price=?, current_stock=?
+        SET item_name=?, category=?, unit_cost=?, selling_price=?, current_stock=?,
+            product_barcode=COALESCE(?, product_barcode)
         WHERE barcode=?
-    """, (item_name, category, unit_cost, selling_price, current_stock, barcode))
+    """, (item_name, category, unit_cost, selling_price, current_stock, product_barcode, barcode))
     conn.commit()
     conn.close()
 
 def get_item_by_barcode(barcode):
     conn = get_connection()
     cursor = conn.cursor()
-    cursor.execute("SELECT * FROM items WHERE barcode=?", (barcode,))
+    cursor.execute("SELECT * FROM items WHERE barcode=? OR product_barcode=?", (barcode, barcode))
     item = cursor.fetchone()
     conn.close()
     return item
@@ -244,20 +246,10 @@ def mark_receipt_paid(receipt_no, cash, change_amount):
     conn.commit()
     conn.close()
 
-def get_all_receipts(start_date=None, end_date=None):
+def get_all_receipts():
     conn = get_connection()
     cursor = conn.cursor()
-    # receipts.date is stored as MM/DD/YY — convert for comparison
-    if start_date and end_date:
-        cursor.execute("""
-            SELECT date, time, receipt_no, total, is_paid FROM receipts
-            WHERE strftime('%Y-%m-%d',
-                '20'||substr(date,7,2)||'-'||substr(date,1,2)||'-'||substr(date,4,2))
-                BETWEEN ? AND ?
-            ORDER BY id DESC
-        """, (start_date, end_date))
-    else:
-        cursor.execute("SELECT date, time, receipt_no, total, is_paid FROM receipts ORDER BY id DESC")
+    cursor.execute("SELECT date, time, receipt_no, total, is_paid FROM receipts ORDER BY id DESC")
     rows = cursor.fetchall()
     conn.close()
     return rows

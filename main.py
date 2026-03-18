@@ -95,9 +95,11 @@ class App(ctk.CTk):
         self._scan_timer  = None
 
     def _handle_scanned_barcode(self, barcode):
-        # If inventory page is currently visible, ignore global scan
-        # Inventory handles its own item selection — scanning there
-        # was causing quantity and price to double
+        # Block global scanner if any popup (CTkToplevel) is currently open
+        for widget in self.winfo_children():
+            if widget.winfo_class() == "Toplevel" and widget.winfo_viewable():
+                return
+        # Block global scanner if inventory page is currently visible
         if self.inventory_page.winfo_ismapped():
             return
         self.show_page("sell")
