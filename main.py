@@ -95,6 +95,11 @@ class App(ctk.CTk):
         self._scan_timer  = None
 
     def _handle_scanned_barcode(self, barcode):
+        # If inventory page is currently visible, ignore global scan
+        # Inventory handles its own item selection — scanning there
+        # was causing quantity and price to double
+        if self.inventory_page.winfo_ismapped():
+            return
         self.show_page("sell")
         err = self.sell_page.ctrl.add_by_barcode(barcode)
         if err:
