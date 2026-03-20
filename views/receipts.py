@@ -318,8 +318,14 @@ class ReceiptsPage(ctk.CTkFrame):
             if err:
                 self._show_msg(err, error=True)
                 return
+            cash, change, is_paid = self.ctrl.get_selected_payment_info()
+            if not is_paid:
+                cash, change = 0, 0
             import controllers.controller as c
-            c._app.receipt_page.load_receipt(cart, self.ctrl.selected_receipt_no, back_to="receipts")
+            c._app.receipt_page.load_receipt(
+                cart, self.ctrl.selected_receipt_no,
+                back_to="receipts", cash=cash, change=change
+            )
             controller.navigate("receipt")
 
         def do_pdf():

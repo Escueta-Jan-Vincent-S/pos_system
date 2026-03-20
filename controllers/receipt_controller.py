@@ -31,7 +31,7 @@ def generate_barcode_image(receipt_no):
     except:
         return None
 
-def print_pdf(cart, receipt_no):
+def print_pdf(cart, receipt_no, cash=0, change=0):
     try:
         from reportlab.lib.pagesizes import A6
         from reportlab.pdfgen import canvas
@@ -147,6 +147,12 @@ def print_pdf(cart, receipt_no):
         c.rect(10, y - 5, w - 20, 18, fill=1, stroke=0)
         c.setFillColor(colors.black)
         left_right("TOTAL", f"P{total:.2f}", size=11, bold=True)
+
+        # Cash and Change rows
+        if cash > 0:
+            left_right("CASH", f"P{cash:.2f}", size=10)
+            left_right("CHANGE", f"P{change:.2f}", size=10, bold=True)
+
         solid_line()
 
         # Barcode
@@ -193,7 +199,7 @@ def print_pdf(cart, receipt_no):
     except Exception as e:
         return f"PDF Error: {str(e)}"
 
-def print_usb(cart, receipt_no):
+def print_usb(cart, receipt_no, cash=0, change=0):
     try:
         from escpos.printer import Usb
         now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
@@ -248,6 +254,11 @@ def print_usb(cart, receipt_no):
         printer.text("-" * 32 + "\n")
         printer.set(bold=True)
         printer.text(f"{'TOTAL':<20}P{total:.2f}\n")
+        if cash > 0:
+            printer.set(bold=False)
+            printer.text(f"{'CASH':<20}P{cash:.2f}\n")
+            printer.set(bold=True)
+            printer.text(f"{'CHANGE':<20}P{change:.2f}\n")
         printer.text("=" * 32 + "\n")
 
         # Barcode — CODE39 with numeric part only (REC prefix removed)

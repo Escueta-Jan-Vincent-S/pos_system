@@ -216,15 +216,18 @@ def save_receipt(cart, total, cash, change_amount, is_paid=1, receipt_no=None):
     conn = get_connection()
     cursor = conn.cursor()
     if not receipt_no:
-        receipt_no = f"REC{random.randint(10000, 99999)}"
+        while True:
+            receipt_no = f"REC{random.randint(10000, 99999)}"
+            cursor.execute("SELECT COUNT(*) FROM receipts WHERE receipt_no=?", (receipt_no,))
+            if cursor.fetchone()[0] == 0:
+                break
     now = datetime.now()
     date_str = now.strftime("%m/%d/%y")
     time_str = now.strftime("%H:%M")
     cursor.execute("""
-        INSERT OR IGNORE INTO receipts (receipt_no, date, time, total, cash, change_amount, is_paid)
+        INSERT OR REPLACE INTO receipts (receipt_no, date, time, total, cash, change_amount, is_paid)
         VALUES (?, ?, ?, ?, ?, ?, ?)
     """, (receipt_no, date_str, time_str, total, cash, change_amount, is_paid))
-    # Only insert items if this is a new receipt
     cursor.execute("SELECT COUNT(*) FROM receipt_items WHERE receipt_no = ?", (receipt_no,))
     if cursor.fetchone()[0] == 0:
         for item in cart:
@@ -246,10 +249,19 @@ def mark_receipt_paid(receipt_no, cash, change_amount):
     conn.commit()
     conn.close()
 
-def get_all_receipts():
+def get_all_receipts(start_date=None, end_date=None):
     conn = get_connection()
     cursor = conn.cursor()
-    cursor.execute("SELECT date, time, receipt_no, total, is_paid FROM receipts ORDER BY id DESC")
+    if start_date and end_date:
+        cursor.execute("""
+            SELECT date, time, receipt_no, total, is_paid FROM receipts
+            WHERE strftime('%Y-%m-%d',
+                '20'||substr(date,7,2)||'-'||substr(date,1,2)||'-'||substr(date,4,2))
+                BETWEEN ? AND ?
+            ORDER BY id DESC
+        """, (start_date, end_date))
+    else:
+        cursor.execute("SELECT date, time, receipt_no, total, is_paid FROM receipts ORDER BY id DESC")
     rows = cursor.fetchall()
     conn.close()
     return rows
@@ -492,11 +504,19 @@ def update_classifications_by_demand_qty():
     conn.close()
 
 
+def get_receipt_payment_info(receipt_no):
+    """Returns (cash, change_amount, is_paid) for a given receipt."""
+    conn = get_connection()
+    cursor = conn.cursor()
+    cursor.execute("SELECT cash, change_amount, is_paid FROM receipts WHERE receipt_no=?", (receipt_no,))
+    row = cursor.fetchone()
+    conn.close()
+    if row:
+        return row[0], row[1], row[2]
+    return 0, 0, 0
+
+
 def get_top10_profit_products():
-    """
-    Returns top 10 products by total profit (selling_price - unit_cost) * quantity.
-    Only counts PAID receipts.
-    """
     conn = get_connection()
     cursor = conn.cursor()
     cursor.execute("""
@@ -513,30 +533,20 @@ def get_top10_profit_products():
     """)
     rows = cursor.fetchall()
     conn.close()
-    return rows  # list of (item_name, total_profit, total_sales)
+    return rows
 
 
 def get_sales_and_profit_summary():
-    """
-    Returns a dict with total_sales and total_profit for:
-    today, this_week, this_month, this_year
-    Profit = (selling_price - unit_cost) * quantity per receipt item
-    Only counts PAID receipts.
-    Date stored as MM/DD/YY in receipts table.
-    """
     from datetime import datetime, timedelta
     conn = get_connection()
     cursor = conn.cursor()
 
     today = datetime.now()
-    today_str  = today.strftime("%m/%d/%y")
-
-    week_start = today - timedelta(days=today.weekday())
+    week_start  = today - timedelta(days=today.weekday())
     month_start = today.replace(day=1)
     year_start  = today.replace(month=1, day=1)
 
     def _query(start_str, end_str=None):
-        # Convert MM/DD/YY dates to comparable format using SQLite
         if end_str:
             cursor.execute("""
                 SELECT ri.selling_price, ri.quantity, i.unit_cost

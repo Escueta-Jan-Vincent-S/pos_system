@@ -1,4 +1,4 @@
-from database.database import get_all_receipts, get_receipt_by_no, toggle_receipt_paid, delete_receipt
+from database.database import get_all_receipts, get_receipt_by_no, toggle_receipt_paid, delete_receipt, get_receipt_payment_info
 from controllers.receipt_controller import print_pdf, print_usb
 
 
@@ -22,6 +22,12 @@ class ReceiptsController:
             return None, "Receipt not found!"
         return cart, None
 
+    def get_selected_payment_info(self):
+        """Returns (cash, change, is_paid) for the selected receipt."""
+        if not self.selected_receipt_no:
+            return 0, 0, 0
+        return get_receipt_payment_info(self.selected_receipt_no)
+
     def toggle_paid(self):
         if not self.selected_receipt_no:
             return "No receipt selected!"
@@ -39,10 +45,16 @@ class ReceiptsController:
         cart, err = self.get_selected_cart()
         if err:
             return err
-        return print_pdf(cart, self.selected_receipt_no)
+        cash, change, is_paid = self.get_selected_payment_info()
+        if not is_paid:
+            cash, change = 0, 0
+        return print_pdf(cart, self.selected_receipt_no, cash, change)
 
     def print_selected_usb(self):
         cart, err = self.get_selected_cart()
         if err:
             return err
-        return print_usb(cart, self.selected_receipt_no)
+        cash, change, is_paid = self.get_selected_payment_info()
+        if not is_paid:
+            cash, change = 0, 0
+        return print_usb(cart, self.selected_receipt_no, cash, change)

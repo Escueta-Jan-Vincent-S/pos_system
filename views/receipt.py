@@ -11,6 +11,8 @@ class ReceiptPage(ctk.CTkFrame):
         super().__init__(master, fg_color="#ffffff", corner_radius=0)
         self.cart = []
         self.receipt_no = ""
+        self.cash = 0
+        self.change = 0
 
         # ── Header ──────────────────────────────────────────
         header = ctk.CTkFrame(self, fg_color="#000000", height=80, corner_radius=0)
@@ -78,18 +80,20 @@ class ReceiptPage(ctk.CTkFrame):
             command=self.do_pdf_print
         ).pack(side="left", padx=8, pady=12)
 
-    def load_receipt(self, cart, receipt_no=None, back_to="inventory"):
+    def load_receipt(self, cart, receipt_no=None, back_to="inventory", cash=0, change=0):
         self._back_target = back_to
         self.cart = cart
+        self.cash = cash
+        self.change = change
         # Use provided receipt_no (from sell page) or generate new one
         if receipt_no:
             self.receipt_no = receipt_no
+            # Already saved as PAID by sell_controller — don't overwrite
         else:
             self.receipt_no = f"REC{random.randint(10000, 99999)}"
-
-        # Save to DB as UNPAID so it appears in receipts list
-        total = sum(i["selling_price"] * i["quantity"] for i in cart)
-        db_save_receipt(cart, total, 0, 0, is_paid=0, receipt_no=self.receipt_no)
+            # Coming from inventory — save as UNPAID
+            total = sum(i["selling_price"] * i["quantity"] for i in cart)
+            db_save_receipt(cart, total, cash, change, is_paid=0, receipt_no=self.receipt_no)
 
         now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
@@ -186,6 +190,28 @@ class ReceiptPage(ctk.CTkFrame):
             font=ctk.CTkFont(size=13, weight="bold"),
             text_color="#000000").pack(side="right", padx=8)
 
+        # ── Cash and Change ───────────────────────────────────
+        if self.cash > 0:
+            cash_row = ctk.CTkFrame(self.card, fg_color="#ffffff", corner_radius=0, height=28)
+            cash_row.pack(fill="x", padx=10, pady=1)
+            cash_row.pack_propagate(False)
+            ctk.CTkLabel(cash_row, text="CASH",
+                font=ctk.CTkFont(size=12),
+                text_color="#555555").pack(side="left", padx=8)
+            ctk.CTkLabel(cash_row, text=f"₱{self.cash:.2f}",
+                font=ctk.CTkFont(size=12),
+                text_color="#555555").pack(side="right", padx=8)
+
+            change_row = ctk.CTkFrame(self.card, fg_color="#f0fff0", corner_radius=0, height=28)
+            change_row.pack(fill="x", padx=10, pady=1)
+            change_row.pack_propagate(False)
+            ctk.CTkLabel(change_row, text="CHANGE",
+                font=ctk.CTkFont(size=12, weight="bold"),
+                text_color="#228B22").pack(side="left", padx=8)
+            ctk.CTkLabel(change_row, text=f"₱{self.change:.2f}",
+                font=ctk.CTkFont(size=12, weight="bold"),
+                text_color="#228B22").pack(side="right", padx=8)
+
         divider()
 
         # ── Barcode Image ─────────────────────────────────────
@@ -240,11 +266,11 @@ class ReceiptPage(ctk.CTkFrame):
         ctk.CTkLabel(self.card, text="", height=10).pack()
 
     def do_usb_print(self):
-        result = print_usb(self.cart, self.receipt_no)
+        result = print_usb(self.cart, self.receipt_no, self.cash, self.change)
         self._show_result(result)
 
     def do_pdf_print(self):
-        result = print_pdf(self.cart, self.receipt_no)
+        result = print_pdf(self.cart, self.receipt_no, self.cash, self.change)
         self._show_result(result)
 
     def _show_result(self, message):
