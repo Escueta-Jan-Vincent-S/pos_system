@@ -95,12 +95,8 @@ class App(ctk.CTk):
         self._scan_timer  = None
 
     def _handle_scanned_barcode(self, barcode):
-        # Block global scanner if any popup (CTkToplevel) is currently open
-        for widget in self.winfo_children():
-            if widget.winfo_class() == "Toplevel" and widget.winfo_viewable():
-                return
-        # Block global scanner if inventory page is currently visible
-        if self.inventory_page.winfo_ismapped():
+        # Block global scanner only when Edit Item popup is open
+        if getattr(self, '_edit_item_open', False):
             return
         self.show_page("sell")
         err = self.sell_page.ctrl.add_by_barcode(barcode)
