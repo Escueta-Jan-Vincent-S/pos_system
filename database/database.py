@@ -490,3 +490,61 @@ def update_classifications_by_demand_qty():
         cursor.execute("UPDATE items SET classification=? WHERE barcode=?", (cls, barcode))
     conn.commit()
     conn.close()
+
+
+def get_sales_and_profit_summary():
+    """
+    Returns a dict with total_sales and total_profit for:
+    today, this_week, this_month, this_year
+    Profit = (selling_price - unit_cost) * quantity per receipt item
+    Only counts PAID receipts.
+    Date stored as MM/DD/YY in receipts table.
+    """
+    from datetime import datetime, timedelta
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    today = datetime.now()
+    today_str  = today.strftime("%m/%d/%y")
+
+    week_start = today - timedelta(days=today.weekday())
+    month_start = today.replace(day=1)
+    year_start  = today.replace(month=1, day=1)
+
+    def _query(start_str, end_str=None):
+        # Convert MM/DD/YY dates to comparable format using SQLite
+        if end_str:
+            cursor.execute("""
+                SELECT ri.selling_price, ri.quantity, i.unit_cost
+                FROM receipt_items ri
+                JOIN receipts r ON ri.receipt_no = r.receipt_no
+                LEFT JOIN items i ON ri.barcode = i.barcode
+                WHERE r.is_paid = 1
+                AND strftime('%Y-%m-%d',
+                    '20'||substr(r.date,7,2)||'-'||substr(r.date,1,2)||'-'||substr(r.date,4,2))
+                BETWEEN ? AND ?
+            """, (start_str, end_str))
+        else:
+            cursor.execute("""
+                SELECT ri.selling_price, ri.quantity, i.unit_cost
+                FROM receipt_items ri
+                JOIN receipts r ON ri.receipt_no = r.receipt_no
+                LEFT JOIN items i ON ri.barcode = i.barcode
+                WHERE r.is_paid = 1
+                AND strftime('%Y-%m-%d',
+                    '20'||substr(r.date,7,2)||'-'||substr(r.date,1,2)||'-'||substr(r.date,4,2))
+                = ?
+            """, (start_str,))
+        rows = cursor.fetchall()
+        sales  = sum(sp * qty for sp, qty, _ in rows)
+        profit = sum((sp - (uc or 0)) * qty for sp, qty, uc in rows)
+        return round(sales, 2), round(profit, 2)
+
+    result = {
+        "today":      _query(today.strftime("%Y-%m-%d")),
+        "this_week":  _query(week_start.strftime("%Y-%m-%d"),  today.strftime("%Y-%m-%d")),
+        "this_month": _query(month_start.strftime("%Y-%m-%d"), today.strftime("%Y-%m-%d")),
+        "this_year":  _query(year_start.strftime("%Y-%m-%d"),  today.strftime("%Y-%m-%d")),
+    }
+    conn.close()
+    return result

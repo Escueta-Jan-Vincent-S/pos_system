@@ -67,6 +67,44 @@ class DashboardPage(ctk.CTkFrame):
         middle = ctk.CTkFrame(body, fg_color="#ffffff", corner_radius=0)
         middle.pack(side="left", fill="both", expand=True, padx=(0, 15))
 
+        # ── Profit / Sales summary cards ──────────────────────
+        summary_frame = ctk.CTkFrame(middle, fg_color="#ffffff", corner_radius=0)
+        summary_frame.pack(fill="x", pady=(5, 8))
+
+        for i in range(4):
+            summary_frame.grid_columnconfigure(i, weight=1, uniform="sc")
+
+        card_data = [
+            ("TODAY",      "today"),
+            ("THIS WEEK",  "this_week"),
+            ("THIS MONTH", "this_month"),
+            ("THIS YEAR",  "this_year"),
+        ]
+        self._summary_labels = {}
+        for col, (label, key) in enumerate(card_data):
+            card = ctk.CTkFrame(summary_frame, fg_color="#000000", corner_radius=8,
+                                border_color="#000000", border_width=1)
+            card.grid(row=0, column=col, padx=4, sticky="nsew", ipady=6)
+
+            ctk.CTkLabel(card, text=label,
+                font=ctk.CTkFont(size=13, weight="bold"),
+                text_color="#aaaaaa"
+            ).pack(pady=(8, 2))
+
+            sales_lbl = ctk.CTkLabel(card, text="Sales: —",
+                font=ctk.CTkFont(size=13, weight="bold"),
+                text_color="#00BFFF"
+            )
+            sales_lbl.pack()
+
+            profit_lbl = ctk.CTkLabel(card, text="Profit: —",
+                font=ctk.CTkFont(size=13, weight="bold"),
+                text_color="#90EE90"
+            )
+            profit_lbl.pack(pady=(0, 8))
+
+            self._summary_labels[key] = (sales_lbl, profit_lbl)
+
         # Stats card
         stats_card = ctk.CTkFrame(
             middle, fg_color="#00BFFF", corner_radius=8, border_color="#000000", border_width=1
@@ -132,9 +170,18 @@ class DashboardPage(ctk.CTkFrame):
     # ── Load data (called on navigate) ───────────────────────
     def load_items(self):
         self._load_stats()
+        self._load_summary()
         self._load_pie_chart()
         self._load_rop_items()
         self.refresh_role_ui()
+
+    def _load_summary(self):
+        from database.database import get_sales_and_profit_summary
+        data = get_sales_and_profit_summary()
+        for key, (sales_lbl, profit_lbl) in self._summary_labels.items():
+            sales, profit = data.get(key, (0, 0))
+            sales_lbl.configure(text=f"Sales: ₱{sales:,.2f}")
+            profit_lbl.configure(text=f"Profit: ₱{profit:,.2f}")
 
     def refresh_role_ui(self):
         from controllers.controller import is_admin
