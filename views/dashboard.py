@@ -45,11 +45,12 @@ class DashboardPage(ctk.CTkFrame):
         self.role_badge.pack(fill="x", pady=(0, 8), padx=2)
 
         btn_configs = [
-            ("INVENTORY", "#ffffff", "#000000", "#e0e0e0", on_inventory_click),
-            ("SELL",      "#90EE90", "#000000", "#7dd67d", on_sell_click),
-            ("RECEIPTS",  "#00BFFF", "#000000", "#009fd4", on_receipts_click),
-            ("USER",      "#d3d3d3", "#000000", "#c0c0c0", lambda: controller.navigate("user")),
-            ("EXIT",      "#FF4444", "#000000", "#cc0000", on_exit_click),
+            ("INVENTORY",    "#ffffff", "#000000", "#e0e0e0", on_inventory_click),
+            ("SELL",         "#90EE90", "#000000", "#7dd67d", on_sell_click),
+            ("RECEIPTS",     "#00BFFF", "#000000", "#009fd4", on_receipts_click),
+            ("USER",         "#d3d3d3", "#000000", "#c0c0c0", lambda: controller.navigate("user")),
+            ("📊 TOP 10",    "#FFD700", "#000000", "#e6c200", lambda: self._show_top10_popup()),
+            ("EXIT",         "#FF4444", "#000000", "#cc0000", on_exit_click),
         ]
 
         for text, bg, fg, hover, cmd in btn_configs:
@@ -174,6 +175,113 @@ class DashboardPage(ctk.CTkFrame):
         self._load_pie_chart()
         self._load_rop_items()
         self.refresh_role_ui()
+
+    def _show_top10_popup(self):
+        from database.database import get_top10_profit_products
+        import tkinter as tk
+
+        popup = ctk.CTkToplevel(self)
+        popup.title("Top 10 Products by Profit")
+        popup.geometry("900x600")
+        popup.resizable(False, False)
+        popup.grab_set()
+        popup.lift()
+
+        ctk.CTkLabel(popup, text="📊  TOP 10 PRODUCTS BY PROFIT",
+            font=ctk.CTkFont(size=22, weight="bold"),
+            text_color="#000000"
+        ).pack(pady=(20, 5))
+
+        ctk.CTkFrame(popup, fg_color="#cccccc", height=1, corner_radius=0).pack(fill="x", padx=20)
+
+        data = get_top10_profit_products()
+
+        if not data:
+            ctk.CTkLabel(popup,
+                text="No sales data yet.\nComplete some transactions first.",
+                font=ctk.CTkFont(size=15), text_color="#888888", justify="center"
+            ).pack(expand=True)
+            return
+
+        # ── Bar chart using tkinter Canvas ────────────────────
+        chart_frame = ctk.CTkFrame(popup, fg_color="#ffffff", corner_radius=0)
+        chart_frame.pack(fill="both", expand=True, padx=20, pady=15)
+
+        canvas_w, canvas_h = 860, 440
+        canvas = tk.Canvas(chart_frame, width=canvas_w, height=canvas_h,
+                           bg="#ffffff", highlightthickness=0)
+        canvas.pack()
+
+        margin_left  = 180
+        margin_right = 30
+        margin_top   = 30
+        margin_bottom= 60
+        bar_area_w   = canvas_w - margin_left - margin_right
+        bar_area_h   = canvas_h - margin_top  - margin_bottom
+
+        max_profit = max(row[1] for row in data) or 1
+        bar_count  = len(data)
+        bar_gap    = 12
+        bar_w      = (bar_area_w - bar_gap * (bar_count + 1)) // bar_count
+
+        bar_colors = ["#4488FF","#90EE90","#FFD700","#FF6B6B","#00BFFF",
+                      "#FFA500","#9B59B6","#2ECC71","#E74C3C","#1ABC9C"]
+
+        for idx, (name, profit, sales) in enumerate(data):
+            x1 = margin_left + bar_gap + idx * (bar_w + bar_gap)
+            x2 = x1 + bar_w
+            bar_h = int((profit / max_profit) * bar_area_h)
+            y1 = margin_top + bar_area_h - bar_h
+            y2 = margin_top + bar_area_h
+
+            color = bar_colors[idx % len(bar_colors)]
+            canvas.create_rectangle(x1, y1, x2, y2, fill=color, outline="")
+
+            # Profit label on top of bar
+            canvas.create_text(
+                (x1 + x2) // 2, y1 - 8,
+                text=f"₱{profit:,.0f}",
+                font=("Arial", 9, "bold"),
+                fill="#000000"
+            )
+
+            # Item name below bar (rotated using angled placement)
+            short_name = name[:14] + "…" if len(name) > 14 else name
+            canvas.create_text(
+                (x1 + x2) // 2, y2 + 10,
+                text=short_name,
+                font=("Arial", 9),
+                fill="#000000",
+                angle=35,
+                anchor="nw"
+            )
+
+        # Y-axis line
+        canvas.create_line(margin_left, margin_top,
+                           margin_left, margin_top + bar_area_h,
+                           fill="#cccccc", width=1)
+        # X-axis line
+        canvas.create_line(margin_left, margin_top + bar_area_h,
+                           canvas_w - margin_right, margin_top + bar_area_h,
+                           fill="#cccccc", width=1)
+
+        # Y-axis labels
+        for i in range(5):
+            val = max_profit * i / 4
+            y   = margin_top + bar_area_h - int((val / max_profit) * bar_area_h)
+            canvas.create_text(margin_left - 8, y,
+                text=f"₱{val:,.0f}", font=("Arial", 9),
+                fill="#555555", anchor="e")
+            canvas.create_line(margin_left - 4, y,
+                               margin_left, y, fill="#aaaaaa")
+
+        ctk.CTkButton(popup, text="CLOSE",
+            fg_color="#d3d3d3", text_color="#000000",
+            hover_color="#c0c0c0", corner_radius=0,
+            font=ctk.CTkFont(size=14, weight="bold"),
+            width=120, height=38,
+            command=popup.destroy
+        ).pack(pady=(0, 15))
 
     def _load_summary(self):
         from database.database import get_sales_and_profit_summary

@@ -492,6 +492,30 @@ def update_classifications_by_demand_qty():
     conn.close()
 
 
+def get_top10_profit_products():
+    """
+    Returns top 10 products by total profit (selling_price - unit_cost) * quantity.
+    Only counts PAID receipts.
+    """
+    conn = get_connection()
+    cursor = conn.cursor()
+    cursor.execute("""
+        SELECT ri.item_name,
+               SUM((ri.selling_price - COALESCE(i.unit_cost, 0)) * ri.quantity) as total_profit,
+               SUM(ri.selling_price * ri.quantity) as total_sales
+        FROM receipt_items ri
+        JOIN receipts r ON ri.receipt_no = r.receipt_no
+        LEFT JOIN items i ON ri.barcode = i.barcode
+        WHERE r.is_paid = 1
+        GROUP BY ri.item_name
+        ORDER BY total_profit DESC
+        LIMIT 10
+    """)
+    rows = cursor.fetchall()
+    conn.close()
+    return rows  # list of (item_name, total_profit, total_sales)
+
+
 def get_sales_and_profit_summary():
     """
     Returns a dict with total_sales and total_profit for:
