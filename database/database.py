@@ -477,18 +477,18 @@ def get_items_with_demand(start_date=None, end_date=None):
 
 def update_classifications_by_demand_qty():
     """
-    ABC classification based on CUMULATIVE demand quantity thresholds:
-      A = demand > 200
-      B = demand 91 to 200
-      C = demand 90 and below (including 0)
+    ABC classification based on CUMULATIVE demand quantity thresholds.
+    Only updates items that have been through reorder computation (rop > 0).
+    Items not yet computed are left untouched.
     """
     conn = get_connection()
     cursor = conn.cursor()
-    # Get cumulative demand per item
+    # Only update items that have reorder computation done (rop > 0)
     cursor.execute("""
         SELECT i.barcode, COALESCE(SUM(d.qty), 0) as total_demand
         FROM items i
         LEFT JOIN demand_log d ON i.barcode = d.barcode
+        WHERE i.rop > 0
         GROUP BY i.barcode
     """)
     rows = cursor.fetchall()
@@ -514,6 +514,29 @@ def get_receipt_payment_info(receipt_no):
     if row:
         return row[0], row[1], row[2]
     return 0, 0, 0
+
+
+def update_classification_for_item(barcode):
+    """Update ABC classification for a single item only."""
+    conn = get_connection()
+    cursor = conn.cursor()
+    cursor.execute("""
+        SELECT COALESCE(SUM(d.qty), 0) as total_demand
+        FROM items i
+        LEFT JOIN demand_log d ON i.barcode = d.barcode
+        WHERE i.barcode = ?
+    """, (barcode,))
+    row = cursor.fetchone()
+    demand = row[0] if row else 0
+    if demand > 200:
+        cls = "A"
+    elif demand >= 91:
+        cls = "B"
+    else:
+        cls = "C"
+    cursor.execute("UPDATE items SET classification=? WHERE barcode=?", (cls, barcode))
+    conn.commit()
+    conn.close()
 
 
 def get_top10_profit_products():

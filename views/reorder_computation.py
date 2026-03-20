@@ -3,7 +3,7 @@ import math
 import statistics
 from controllers import controller
 from database.database import (
-    get_all_items, update_reorder_info, update_classifications_by_demand_qty,
+    get_all_items, update_reorder_info, update_classification_for_item,
     get_item_by_barcode
 )
 
@@ -411,7 +411,7 @@ class ReorderComputationPage(ctk.CTkFrame):
                 status = "OK"
 
             update_reorder_info(barcode, safety_stock, rop, min_level, max_level, status, avg_demand)
-            update_classifications_by_demand_qty()
+            update_classification_for_item(barcode)
 
             popup = ctk.CTkToplevel(self)
             popup.title("Applied")

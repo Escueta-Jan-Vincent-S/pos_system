@@ -180,6 +180,15 @@ class InventoryPage(ctk.CTkFrame):
             command=self.go_to_receipt
         ).pack(fill="x", padx=10, pady=5)
 
+        ctk.CTkButton(
+            cart_panel, text="💳 GO TO SELL",
+            fg_color="#00BFFF", text_color="#000000",
+            hover_color="#009fd4", border_color="#000000", border_width=2,
+            font=ctk.CTkFont(size=16, weight="bold"),
+            corner_radius=0, height=45,
+            command=self.go_to_sell
+        ).pack(fill="x", padx=10, pady=(0, 5))
+
         # ── Bottom Button Bar ─────────────────────────────────
         btn_frame = ctk.CTkFrame(self, fg_color="#ffffff", height=80, corner_radius=0)
         btn_frame.pack(fill="x", padx=10, pady=10)
@@ -546,6 +555,28 @@ class InventoryPage(ctk.CTkFrame):
             return
         c._app.receipt_page.load_receipt(self.cart)
         controller.navigate("receipt")
+
+    def go_to_sell(self):
+        if not self.cart:
+            self._warning("Cart is empty!")
+            return
+        # Save as unpaid first so it's recorded
+        from database.database import save_receipt as db_save_receipt
+        import random
+        total = sum(i["selling_price"] * i["quantity"] for i in self.cart)
+        receipt_no = f"REC{random.randint(10000, 99999)}"
+        db_save_receipt(self.cart, total, 0, 0, is_paid=0, receipt_no=receipt_no)
+        # Load cart into sell page
+        sell_page = c._app.sell_page
+        sell_page.ctrl.clear_cart()
+        for item in self.cart:
+            sell_page.ctrl.cart.append(item.copy())
+        sell_page._refresh_cart()
+        # Set loaded_receipt_no so payment marks it as paid
+        sell_page.ctrl.loaded_receipt_no = receipt_no
+        # Clear inventory cart
+        self.clear_cart()
+        controller.navigate("sell")
 
     # ─────────────────────────────────────────────────────────
     # Warning popup

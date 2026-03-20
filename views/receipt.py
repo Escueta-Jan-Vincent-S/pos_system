@@ -80,6 +80,15 @@ class ReceiptPage(ctk.CTkFrame):
             command=self.do_pdf_print
         ).pack(side="left", padx=8, pady=12)
 
+        ctk.CTkButton(
+            bottom_bar, text="💳  Go to Sell",
+            fg_color="#FFD700", text_color="#000000",
+            hover_color="#e6c200", border_color="#888888", border_width=1,
+            font=ctk.CTkFont(size=15, weight="bold"),
+            corner_radius=0, width=220, height=46,
+            command=self.do_go_to_sell
+        ).pack(side="left", padx=8, pady=12)
+
     def load_receipt(self, cart, receipt_no=None, back_to="inventory", cash=0, change=0):
         self._back_target = back_to
         self.cart = cart
@@ -264,6 +273,18 @@ class ReceiptPage(ctk.CTkFrame):
 
         center_label("Please come again!", size=11)
         ctk.CTkLabel(self.card, text="", height=10).pack()
+
+    def do_go_to_sell(self):
+        import controllers.controller as c
+        # Load cart into sell page
+        sell_page = c._app.sell_page
+        sell_page.ctrl.clear_cart()
+        for item in self.cart:
+            sell_page.ctrl.cart.append(item.copy())
+        sell_page._refresh_cart()
+        # Load receipt into sell so it can be marked paid on payment
+        sell_page.ctrl.loaded_receipt_no = self.receipt_no
+        controller.navigate("sell")
 
     def do_usb_print(self):
         result = print_usb(self.cart, self.receipt_no, self.cash, self.change)
