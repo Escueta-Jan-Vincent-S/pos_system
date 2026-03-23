@@ -1,0 +1,24 @@
+APP NAME: Lanz N Lindly
+Version: 1.1.3
+Admin Default Password = pogiako123
+
+1. Install Zadig (for the printer driver — one time only):
+- Download from https://zadig.akeo.ie
+- Plug in the printer
+- Run Zadig as Administrator
+- Select "POS58 Printer" → click "Install Driver"
+- Done — never needs to be repeated unless Windows is reinstalled
+
+2. Create a desktop shortcut that always runs as Admin:
+- Right-click POS_System.exe → Send to → Desktop (create shortcut)
+- Right-click the shortcut → Properties → Advanced → check "Run as Administrator" → OK
+
+NOTE:
+- Always run the shortcut as Admin to ensure the printer works correctly.
+- If you encounter any issues with the printer, try reinstalling the driver using Zadig.
+- Set Scale into 100% for best display results.
+- 1920x1080 is the recommended screen resolution for optimal display.
+
+GUIDE FOR ORIGINAL BARCODE
+In Inventory, click edit item and scan the original barcode to autofill the barcode then save.
+
