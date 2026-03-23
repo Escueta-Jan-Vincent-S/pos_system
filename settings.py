@@ -1,6 +1,6 @@
 # App Info
 APP_NAME = "LANZ N LINDLY"
-APP_VERSION = "1.1.0"
+APP_VERSION = "1.1.5"
 
 # Window Size
 WINDOW_WIDTH = 1920
