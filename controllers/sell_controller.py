@@ -21,6 +21,9 @@ class SellController:
         if normalized.startswith("REC") or normalized.isdigit():
             if normalized.isdigit():
                 normalized = "REC" + normalized
+            # Block if this receipt is already loaded
+            if self.loaded_receipt_no == normalized:
+                return f"Receipt '{normalized}' is already loaded!"
             return self.load_from_receipt(normalized)
 
         item = get_item_by_barcode(barcode)

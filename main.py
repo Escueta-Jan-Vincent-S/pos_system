@@ -77,6 +77,9 @@ class App(ctk.CTk):
         self.bind_all("<Key>", self._on_global_key)
 
     def _on_global_key(self, event):
+        # If Edit Item popup is open, ignore ALL global key events
+        if getattr(self, '_edit_item_open', False):
+            return
         char = event.char
         if self._scan_timer:
             self.after_cancel(self._scan_timer)
